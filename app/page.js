@@ -1,5 +1,5 @@
 "use client";
-import { useUser, useClerk } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Navbar, Footer, JobCard, Spinner, logoColor, logoLetters } from "@/lib/components";
@@ -44,7 +44,6 @@ const BENEFITS_EMPRESA = [
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const { openSignIn } = useClerk();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
@@ -67,7 +66,7 @@ export default function HomePage() {
   };
 
   const handleAcceso = (tipo) => {
-    if (!isSignedIn) { openSignIn(); return; }
+    if (!isSignedIn) { router.push(tipo === "empresa" ? "/empresa-login" : "/candidato-login"); return; }
     if (!role) { router.push("/elegir-rol"); return; }
     router.push(tipo === "empresa" ? "/empresa" : "/dashboard");
   };
@@ -220,10 +219,10 @@ export default function HomePage() {
               <div style={{ background: "linear-gradient(135deg, #eff4ff, #dbeafe)", border: "1px solid #bfdbfe", borderRadius: "14px", padding: "24px" }}>
                 <h3 style={{ fontWeight: "700", fontSize: "15px", color: "#0f172a", marginBottom: "6px" }}>¿Ya tienes cuenta?</h3>
                 <p style={{ color: "#475569", fontSize: "13px", marginBottom: "14px" }}>Inicia sesión para postular a ofertas o publicar como empresa</p>
-                <button onClick={() => openSignIn()} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "8px", padding: "10px", fontWeight: "600", fontSize: "13px", cursor: "pointer", width: "100%", marginBottom: "8px" }}>
+                <button onClick={() => router.push("/candidato-login")} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "8px", padding: "10px", fontWeight: "600", fontSize: "13px", cursor: "pointer", width: "100%", marginBottom: "8px" }}>
                   Iniciar sesión
                 </button>
-                <button onClick={() => openSignIn()} style={{ background: "white", color: "#1a56db", border: "1px solid #bfdbfe", borderRadius: "8px", padding: "10px", fontWeight: "600", fontSize: "13px", cursor: "pointer", width: "100%" }}>
+                <button onClick={() => router.push("/candidato-login")} style={{ background: "white", color: "#1a56db", border: "1px solid #bfdbfe", borderRadius: "8px", padding: "10px", fontWeight: "600", fontSize: "13px", cursor: "pointer", width: "100%" }}>
                   Registrarme gratis
                 </button>
               </div>
