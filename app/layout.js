@@ -33,8 +33,6 @@ export default function RootLayout({ children }) {
         },
       }}
       afterSignOutUrl="/"
-      signInUrl="/sign-in"
-      signUpUrl="/sign-up"
     >
       <html lang="es">
         <body>{children}</body>
