@@ -29,7 +29,7 @@ export default function CandidatoLoginPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f172a, #1e3a5f, #1a56db)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 16px", fontFamily: "'Inter', sans-serif" }}>
-      {isSignedIn && <AutoAssignRole role="candidato" redirectTo="/dashboard" />}
+      {isSignedIn && <AutoAssignRole role="candidato" redirectTo="/dashboard" firstTimeRedirectTo="/perfil?onboarding=1" />}
 
       <a href="/" style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "28px", textDecoration: "none" }}>
         <div style={{ width: "38px", height: "38px", background: "linear-gradient(135deg, #1a56db, #3b82f6)", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center" }}>
