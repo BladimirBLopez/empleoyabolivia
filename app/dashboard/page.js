@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Navbar, Footer, Spinner, EstadoBadge, MapPinIcon, logoLetters, logoColor, timeAgo } from "@/lib/components";
+import { Navbar, Footer, Spinner, EstadoBadge, MapPinIcon, BriefcaseIcon, logoLetters, logoColor, timeAgo } from "@/lib/components";
 import { getPostulacionesCandidato } from "@/lib/supabase";
 
 export default function DashboardPage() {
@@ -11,11 +11,18 @@ export default function DashboardPage() {
   const router = useRouter();
   const [postulaciones, setPostulaciones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const role = user?.unsafeMetadata?.role;
 
   useEffect(() => {
     if (!isSignedIn) return;
     getPostulacionesCandidato(user.id).then(setPostulaciones).catch(console.error).finally(() => setLoading(false));
   }, [isSignedIn, user?.id]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    if (!role) { router.push("/elegir-rol"); return; }
+    if (role === "empresa") router.push("/empresa");
+  }, [isLoaded, isSignedIn, role, router]);
 
   if (!isLoaded) return null;
   if (!isSignedIn) return (
@@ -25,12 +32,13 @@ export default function DashboardPage() {
         <p style={{ fontSize: "48px", marginBottom: "16px" }}>🔐</p>
         <h2 style={{ fontWeight: "700", color: "#0f172a", marginBottom: "8px" }}>Accede a tu dashboard</h2>
         <p style={{ color: "#64748b", marginBottom: "24px" }}>Inicia sesión para ver tus postulaciones y gestionar tu perfil.</p>
-        <button onClick={() => openSignIn()} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "10px", padding: "12px 32px", fontWeight: "600", fontSize: "15px", cursor: "pointer" }}>
+        <button onClick={() => router.push("/candidato-login")} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "10px", padding: "12px 32px", fontWeight: "600", fontSize: "15px", cursor: "pointer" }}>
           Iniciar sesión
         </button>
       </div>
     </div>
   );
+  if (role !== "candidato") return null;
 
   const stats = {
     total: postulaciones.length,
@@ -44,6 +52,7 @@ export default function DashboardPage() {
     <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Inter', sans-serif" }}>
       <Navbar />
 
+      {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #0f172a, #1e3a5f)", padding: "36px 20px" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", alignItems: "center", gap: "16px" }}>
           {user?.imageUrl
@@ -66,6 +75,7 @@ export default function DashboardPage() {
       </div>
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 20px" }}>
+        {/* STATS */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "14px", marginBottom: "32px" }}>
           {[
             { label: "Total postuladas", value: stats.total, color: "#1a56db", bg: "#eff4ff" },
@@ -81,6 +91,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
+        {/* POSTULACIONES */}
         <h2 style={{ fontWeight: "700", fontSize: "18px", color: "#0f172a", marginBottom: "16px" }}>Mis postulaciones</h2>
 
         {loading ? <Spinner /> : postulaciones.length === 0 ? (

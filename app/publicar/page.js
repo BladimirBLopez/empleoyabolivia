@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Navbar, Footer } from "@/lib/components";
@@ -15,6 +15,7 @@ export default function PublicarPage() {
   const { isSignedIn, isLoaded, user } = useUser();
   const { openSignIn } = useClerk();
   const router = useRouter();
+  const role = user?.unsafeMetadata?.role;
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -41,6 +42,12 @@ export default function PublicarPage() {
     }
   };
 
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    if (!role) { router.push("/elegir-rol"); return; }
+    if (role === "candidato") router.push("/dashboard");
+  }, [isLoaded, isSignedIn, role, router]);
+
   if (!isLoaded) return null;
   if (!isSignedIn) return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Inter', sans-serif" }}>
@@ -49,12 +56,13 @@ export default function PublicarPage() {
         <p style={{ fontSize: "48px", marginBottom: "16px" }}>🔐</p>
         <h2 style={{ fontWeight: "700", color: "#0f172a", marginBottom: "8px" }}>Inicia sesión para publicar</h2>
         <p style={{ color: "#64748b", marginBottom: "24px" }}>Necesitas una cuenta para publicar ofertas de empleo.</p>
-        <button onClick={() => openSignIn()} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "10px", padding: "12px 32px", fontWeight: "600", fontSize: "15px", cursor: "pointer" }}>
+        <button onClick={() => router.push("/empresa-login")} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "10px", padding: "12px 32px", fontWeight: "600", fontSize: "15px", cursor: "pointer" }}>
           Iniciar sesión
         </button>
       </div>
     </div>
   );
+  if (role !== "empresa") return null;
 
   if (done) return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Inter', sans-serif" }}>
@@ -87,6 +95,7 @@ export default function PublicarPage() {
         <h1 style={{ fontWeight: "700", fontSize: "24px", color: "#0f172a", marginBottom: "6px" }}>Publicar oferta de empleo</h1>
         <p style={{ color: "#64748b", fontSize: "14px", marginBottom: "32px" }}>Completa los datos para que los candidatos puedan encontrar tu oferta.</p>
 
+        {/* STEPPER */}
         <div style={{ display: "flex", gap: "0", marginBottom: "36px" }}>
           {STEPS.map((s, i) => (
             <div key={i} style={{ flex: 1, display: "flex", alignItems: "center" }}>
@@ -102,6 +111,7 @@ export default function PublicarPage() {
         </div>
 
         <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "32px" }}>
+          {/* STEP 0 */}
           {step === 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               <div>
@@ -143,6 +153,7 @@ export default function PublicarPage() {
             </div>
           )}
 
+          {/* STEP 1 */}
           {step === 1 && (
             <div>
               <label style={labelStyle}>Descripción del puesto *</label>
@@ -157,6 +168,7 @@ export default function PublicarPage() {
             </div>
           )}
 
+          {/* STEP 2 */}
           {step === 2 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
               <div>
@@ -170,6 +182,7 @@ export default function PublicarPage() {
             </div>
           )}
 
+          {/* STEP 3 */}
           {step === 3 && (
             <div>
               <h3 style={{ fontWeight: "600", color: "#0f172a", marginBottom: "20px" }}>Confirma tu oferta</h3>
@@ -188,6 +201,7 @@ export default function PublicarPage() {
             </div>
           )}
 
+          {/* NAVIGATION */}
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: "28px" }}>
             <button onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0}
               style={{ background: "white", border: "1px solid #e2e8f0", color: "#475569", borderRadius: "8px", padding: "10px 24px", fontSize: "14px", cursor: step === 0 ? "not-allowed" : "pointer", opacity: step === 0 ? 0.4 : 1 }}>

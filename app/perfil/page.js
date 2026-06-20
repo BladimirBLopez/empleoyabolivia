@@ -12,6 +12,7 @@ export default function PerfilPage() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { openSignIn } = useClerk();
   const router = useRouter();
+  const role = user?.unsafeMetadata?.role;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -31,6 +32,12 @@ export default function PerfilPage() {
       if (data) setForm(f => ({ ...f, ...data }));
     }).catch(console.error).finally(() => setLoading(false));
   }, [isSignedIn, user?.id]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    if (!role) { router.push("/elegir-rol"); return; }
+    if (role === "empresa") router.push("/empresa");
+  }, [isLoaded, isSignedIn, role, router]);
 
   const handleSave = async () => {
     setSaving(true); setError(""); setSaved(false);
@@ -52,14 +59,15 @@ export default function PerfilPage() {
         <p style={{ fontSize: "48px", marginBottom: "16px" }}>👤</p>
         <h2 style={{ fontWeight: "700", color: "#0f172a", marginBottom: "8px" }}>Tu perfil profesional</h2>
         <p style={{ color: "#64748b", marginBottom: "24px" }}>Inicia sesión para crear y gestionar tu CV.</p>
-        <button onClick={() => openSignIn()} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "10px", padding: "12px 32px", fontWeight: "600", fontSize: "15px", cursor: "pointer" }}>
+        <button onClick={() => router.push("/candidato-login")} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "10px", padding: "12px 32px", fontWeight: "600", fontSize: "15px", cursor: "pointer" }}>
           Iniciar sesión
         </button>
       </div>
     </div>
   );
+  if (role !== "candidato") return null;
 
-  const inputStyle = { width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "14px", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+  const inputStyle = { width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "14px", outline: "none", fontFamily: "inherit", boxSizing: "border-box", transition: "border-color 0.15s" };
   const labelStyle = { display: "block", fontWeight: "500", fontSize: "13px", color: "#374151", marginBottom: "6px" };
   const sectionStyle = { background: "white", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "28px", display: "flex", flexDirection: "column", gap: "18px" };
 
@@ -81,6 +89,7 @@ export default function PerfilPage() {
           </button>
         </div>
 
+        {/* PROGRESS */}
         <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "18px 24px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
@@ -97,6 +106,7 @@ export default function PerfilPage() {
 
         {loading ? <Spinner /> : (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {/* DATOS BÁSICOS */}
             <div style={sectionStyle}>
               <h2 style={{ fontWeight: "700", fontSize: "16px", color: "#0f172a" }}>👤 Datos personales</h2>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
@@ -139,6 +149,7 @@ export default function PerfilPage() {
               </div>
             </div>
 
+            {/* RESUMEN */}
             <div style={sectionStyle}>
               <h2 style={{ fontWeight: "700", fontSize: "16px", color: "#0f172a" }}>📝 Resumen profesional</h2>
               <div>
@@ -148,6 +159,7 @@ export default function PerfilPage() {
               </div>
             </div>
 
+            {/* EXPERIENCIA */}
             <div style={sectionStyle}>
               <h2 style={{ fontWeight: "700", fontSize: "16px", color: "#0f172a" }}>💼 Experiencia laboral</h2>
               <p style={{ fontSize: "12px", color: "#64748b", marginTop: "-10px" }}>Describe tu trayectoria laboral. Puedes usar formato libre.</p>
@@ -155,12 +167,14 @@ export default function PerfilPage() {
                 placeholder="2022 - Actual | Desarrollador Senior | Empresa XYZ&#10;- Responsabilidad 1&#10;- Responsabilidad 2&#10;&#10;2019 - 2022 | Desarrollador Junior | Empresa ABC&#10;- ..." />
             </div>
 
+            {/* EDUCACIÓN */}
             <div style={sectionStyle}>
               <h2 style={{ fontWeight: "700", fontSize: "16px", color: "#0f172a" }}>🎓 Educación</h2>
               <textarea style={{ ...inputStyle, minHeight: "120px", resize: "vertical" }} value={form.educacion} onChange={e => set("educacion", e.target.value)}
                 placeholder="2018 - 2022 | Licenciatura en Ingeniería de Sistemas | UMSA&#10;2023 | Certificación en React | Udemy" />
             </div>
 
+            {/* HABILIDADES */}
             <div style={sectionStyle}>
               <h2 style={{ fontWeight: "700", fontSize: "16px", color: "#0f172a" }}>⚡ Habilidades</h2>
               <div>
@@ -176,6 +190,7 @@ export default function PerfilPage() {
               )}
             </div>
 
+            {/* SAVE */}
             <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "14px" }}>
               {saved && <span style={{ color: "#059669", fontSize: "14px", fontWeight: "500" }}>✓ Guardado correctamente</span>}
               {error && <span style={{ color: "#dc2626", fontSize: "13px" }}>{error}</span>}

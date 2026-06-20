@@ -9,12 +9,13 @@ export default function EmpresaPage() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { openSignIn } = useClerk();
   const router = useRouter();
+  const role = user?.unsafeMetadata?.role;
   const [empleos, setEmpleos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [vistaEmpleo, setVistaEmpleo] = useState(null);
+  const [vistaEmpleo, setVistaEmpleo] = useState(null); // id de empleo con postulaciones abiertas
   const [postulaciones, setPostulaciones] = useState([]);
   const [loadingPost, setLoadingPost] = useState(false);
-  const [tab, setTab] = useState("ofertas");
+  const [tab, setTab] = useState("ofertas"); // 'ofertas' | 'postulaciones'
 
   const fetchEmpleos = async () => {
     setLoading(true);
@@ -26,6 +27,12 @@ export default function EmpresaPage() {
   };
 
   useEffect(() => { if (isSignedIn) fetchEmpleos(); }, [isSignedIn, user?.id]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    if (!role) { router.push("/elegir-rol"); return; }
+    if (role === "candidato") router.push("/dashboard");
+  }, [isLoaded, isSignedIn, role, router]);
 
   const handleToggle = async (id, activo) => {
     await toggleEmpleo(id, !activo);
@@ -62,12 +69,13 @@ export default function EmpresaPage() {
         <p style={{ fontSize: "48px", marginBottom: "16px" }}>🏢</p>
         <h2 style={{ fontWeight: "700", color: "#0f172a", marginBottom: "8px" }}>Panel de empresa</h2>
         <p style={{ color: "#64748b", marginBottom: "24px" }}>Inicia sesión para gestionar tus ofertas y candidatos.</p>
-        <button onClick={() => openSignIn()} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "10px", padding: "12px 32px", fontWeight: "600", fontSize: "15px", cursor: "pointer" }}>
+        <button onClick={() => router.push("/empresa-login")} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "10px", padding: "12px 32px", fontWeight: "600", fontSize: "15px", cursor: "pointer" }}>
           Iniciar sesión
         </button>
       </div>
     </div>
   );
+  if (role !== "empresa") return null;
 
   const totalPostulaciones = empleos.reduce((a, e) => a + (e.postulaciones?.[0]?.count || 0), 0);
 
@@ -75,6 +83,7 @@ export default function EmpresaPage() {
     <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Inter', sans-serif" }}>
       <Navbar />
 
+      {/* HEADER */}
       <div style={{ background: "linear-gradient(135deg, #0f172a, #1e3a5f)", padding: "36px 20px" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
           <div>
@@ -88,6 +97,7 @@ export default function EmpresaPage() {
       </div>
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 20px" }}>
+        {/* STATS */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "14px", marginBottom: "28px" }}>
           {[
             { label: "Ofertas activas", value: empleos.filter(e => e.activo).length, icon: "📋" },
@@ -102,6 +112,7 @@ export default function EmpresaPage() {
           ))}
         </div>
 
+        {/* TABS */}
         <div style={{ display: "flex", gap: "0", borderBottom: "2px solid #e2e8f0", marginBottom: "24px" }}>
           {[["ofertas", "📋 Mis ofertas"], ["postulaciones", `👥 Candidatos${vistaEmpleo ? ` — ${vistaEmpleo.titulo}` : ""}`]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)}
@@ -111,6 +122,7 @@ export default function EmpresaPage() {
           ))}
         </div>
 
+        {/* OFERTAS */}
         {tab === "ofertas" && (
           loading ? <Spinner /> : empleos.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px", background: "white", borderRadius: "14px", border: "1px solid #e2e8f0" }}>
@@ -155,6 +167,7 @@ export default function EmpresaPage() {
           )
         )}
 
+        {/* POSTULACIONES */}
         {tab === "postulaciones" && (
           !vistaEmpleo ? (
             <div style={{ textAlign: "center", padding: "60px 20px", background: "white", borderRadius: "14px", border: "1px solid #e2e8f0" }}>
