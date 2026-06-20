@@ -78,9 +78,9 @@ export default function EmpresaLoginPage() {
         </div>
 
         {mode === "sign-in" ? (
-          <SignIn appearance={appearance} signUpUrl="/empresa-login" routing="hash" />
+          <SignIn appearance={appearance} signUpUrl="/empresa-login" routing="hash" forceRedirectUrl="/empresa-login" />
         ) : (
-          <SignUp appearance={appearance} signInUrl="/empresa-login" routing="hash" />
+          <SignUp appearance={appearance} signInUrl="/empresa-login" routing="hash" forceRedirectUrl="/empresa-login" />
         )}
 
         <p style={{ color: "#94a3b8", fontSize: "12px", marginTop: "24px", textAlign: "center" }}>

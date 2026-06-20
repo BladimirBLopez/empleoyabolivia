@@ -54,9 +54,9 @@ export default function CandidatoLoginPage() {
       </div>
 
       {mode === "sign-in" ? (
-        <SignIn appearance={appearance} signUpUrl="/candidato-login" routing="hash" />
+        <SignIn appearance={appearance} signUpUrl="/candidato-login" routing="hash" forceRedirectUrl="/candidato-login" />
       ) : (
-        <SignUp appearance={appearance} signInUrl="/candidato-login" routing="hash" />
+        <SignUp appearance={appearance} signInUrl="/candidato-login" routing="hash" forceRedirectUrl="/candidato-login" />
       )}
 
       <p style={{ color: "#64748b", fontSize: "12px", marginTop: "24px", textAlign: "center" }}>
