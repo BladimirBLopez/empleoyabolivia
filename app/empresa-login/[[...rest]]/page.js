@@ -1,10 +1,9 @@
 "use client";
-import { SignIn, SignUp, useUser } from "@clerk/nextjs";
+import { SignIn, SignUp } from "@clerk/nextjs";
 import { useState } from "react";
 import { AutoAssignRole } from "@/lib/role";
 
 export default function EmpresaLoginPage() {
-  const { isSignedIn } = useUser();
   const [mode, setMode] = useState("sign-in");
 
   const appearance = {
@@ -29,7 +28,7 @@ export default function EmpresaLoginPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#0f172a", display: "flex", fontFamily: "'Inter', sans-serif" }}>
-      {isSignedIn && <AutoAssignRole role="empresa" redirectTo="/empresa" />}
+      <AutoAssignRole role="empresa" redirectTo="/empresa" firstTimeRedirectTo="/empresa" />
 
       {/* Panel izquierdo — beneficios (solo desktop) */}
       <div className="empresa-side-panel" style={{ flex: "1", background: "linear-gradient(135deg, #1a56db, #0f3d9e)", padding: "60px 48px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
@@ -78,9 +77,9 @@ export default function EmpresaLoginPage() {
         </div>
 
         {mode === "sign-in" ? (
-          <SignIn key="sign-in" appearance={appearance} routing="virtual" forceRedirectUrl="/empresa-login" />
+          <SignIn appearance={appearance} path="/empresa-login" routing="path" signUpUrl="/empresa-login" forceRedirectUrl="/empresa-login" />
         ) : (
-          <SignUp key="sign-up" appearance={appearance} routing="virtual" forceRedirectUrl="/empresa-login" />
+          <SignUp appearance={appearance} path="/empresa-login" routing="path" signInUrl="/empresa-login" forceRedirectUrl="/empresa-login" />
         )}
 
         <p style={{ color: "#94a3b8", fontSize: "12px", marginTop: "24px", textAlign: "center" }}>
