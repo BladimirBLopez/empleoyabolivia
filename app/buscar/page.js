@@ -75,10 +75,75 @@ function BuscarContent() {
       </div>
 
       {/* MAIN */}
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "32px 20px", display: "grid", gridTemplateColumns: "240px 1fr", gap: "28px" }}>
-        
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px 20px 32px" }}>
+
+        {/* CONTADOR + CHIPS HORIZONTALES (estilo InfoJobs) */}
+        <p style={{ color: "#0f172a", fontSize: "15px", fontWeight: "600", marginBottom: "14px" }}>
+          {loading ? "Buscando..." : `${total} oferta${total === 1 ? "" : "s"}`}
+          {location && <span style={{ color: "#64748b", fontWeight: "400" }}> en {location}</span>}
+        </p>
+
+        <div style={{ display: "flex", gap: "8px", marginBottom: "24px", overflowX: "auto", paddingBottom: "4px" }}>
+          {/* Chip de departamento */}
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <select
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              style={{ appearance: "none", padding: "9px 32px 9px 16px", borderRadius: "20px", border: location ? "1px solid #1a56db" : "1px solid #e2e8f0", background: location ? "#eff4ff" : "white", color: location ? "#1a56db" : "#475569", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
+            >
+              <option value="">📍 Todo Bolivia</option>
+              {DEPARTAMENTOS.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+
+          {/* Chip de categoría rápida */}
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <select
+              value={categoria}
+              onChange={e => setCategoria(e.target.value)}
+              style={{ appearance: "none", padding: "9px 32px 9px 16px", borderRadius: "20px", border: categoria ? "1px solid #1a56db" : "1px solid #e2e8f0", background: categoria ? "#eff4ff" : "white", color: categoria ? "#1a56db" : "#475569", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
+            >
+              <option value="">Categoría</option>
+              {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          {/* Chip de tipo de contrato */}
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <select
+              value={tipo}
+              onChange={e => setTipo(e.target.value)}
+              style={{ appearance: "none", padding: "9px 32px 9px 16px", borderRadius: "20px", border: tipo ? "1px solid #1a56db" : "1px solid #e2e8f0", background: tipo ? "#eff4ff" : "white", color: tipo ? "#1a56db" : "#475569", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
+            >
+              <option value="">Contrato</option>
+              {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
+          {(location || categoria || tipo) && (
+            <button onClick={() => { setLocation(""); setCategoria(""); setTipo(""); }}
+              style={{ flexShrink: 0, padding: "9px 14px", borderRadius: "20px", border: "none", background: "transparent", color: "#dc2626", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
+              ✕ Limpiar
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: "28px" }}>
+
         {/* FILTROS SIDEBAR */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "20px" }}>
+            <h3 style={{ fontWeight: "600", fontSize: "14px", color: "#0f172a", marginBottom: "14px" }}>Departamento</h3>
+            {DEPARTAMENTOS.map(d => (
+              <label key={d} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", marginBottom: "8px" }}>
+                <input type="radio" name="depto" checked={location === d} onChange={() => setLocation(location === d ? "" : d)}
+                  style={{ accentColor: "#1a56db" }} />
+                <span style={{ fontSize: "13px", color: "#475569" }}>{d}</span>
+              </label>
+            ))}
+            {location && <button onClick={() => setLocation("")} style={{ fontSize: "12px", color: "#1a56db", background: "none", border: "none", cursor: "pointer", padding: 0 }}>✕ Limpiar</button>}
+          </div>
+
           <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "20px" }}>
             <h3 style={{ fontWeight: "600", fontSize: "14px", color: "#0f172a", marginBottom: "14px" }}>Tipo de contrato</h3>
             {TIPOS.map(t => (
@@ -106,12 +171,6 @@ function BuscarContent() {
 
         {/* RESULTS */}
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-            <p style={{ color: "#64748b", fontSize: "14px" }}>
-              {loading ? "Buscando..." : <><strong style={{ color: "#0f172a" }}>{total}</strong> ofertas encontradas</>}
-            </p>
-          </div>
-
           {loading && empleos.length === 0 ? (
             <Spinner />
           ) : empleos.length === 0 ? (
@@ -136,6 +195,7 @@ function BuscarContent() {
               )}
             </div>
           )}
+        </div>
         </div>
       </div>
       <Footer />
