@@ -3,6 +3,8 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Navbar, Footer, JobCard, Spinner, logoColor, logoLetters } from "@/lib/components";
+import HomeCandidato from "@/lib/home-candidato";
+import HomeEmpresa from "@/lib/home-empresa";
 
 // ─── ICONS ───────────────────────────────────────────────────────────────────
 const SearchIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>;
@@ -57,6 +59,11 @@ export default function HomePage() {
       </div>
     );
   }
+
+  // Si la sesión está activa y la cuenta ya tiene un rol fijado, mostramos
+  // el home dedicado a ese rol en vez del home genérico de bienvenida.
+  if (isSignedIn && role === "candidato") return <HomeCandidato />;
+  if (isSignedIn && role === "empresa") return <HomeEmpresa />;
 
   const handleSearch = () => {
     const params = new URLSearchParams();
