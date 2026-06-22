@@ -8,6 +8,8 @@ import { crearEmpleo } from "@/lib/supabase";
 const CATEGORIAS = ["Tecnología","Ventas","Administración","Marketing","Salud","Educación","Ingeniería","Finanzas","Minería","Telecomunicaciones","Energía","Logística"];
 const TIPOS = ["Tiempo completo","Medio tiempo","Remoto","Freelance","Prácticas"];
 const DEPARTAMENTOS = ["La Paz","Santa Cruz","Cochabamba","Oruro","Potosí","Sucre","Tarija","Trinidad","Cobija"];
+const EXPERIENCIAS = ["Sin experiencia","Menos de 1 año","1-2 años","3-5 años","Más de 5 años"];
+const ESTUDIOS = ["Sin estudios","Secundaria","Técnico","Licenciatura","Postgrado"];
 
 const STEPS = ["Información básica", "Descripción", "Requisitos y beneficios", "Confirmar"];
 
@@ -24,6 +26,7 @@ export default function PublicarPage() {
 
   const [form, setForm] = useState({
     titulo: "", empresa: "", ciudad: "", categoria: "", tipo_contrato: "Tiempo completo",
+    experiencia_minima: "", estudio_minimo: "",
     salario: "", descripcion: "", requisitos: "", beneficios: "", activo: true, destacado: false,
   });
 
@@ -75,7 +78,7 @@ export default function PublicarPage() {
           <button onClick={() => router.push("/empresa")} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "10px", padding: "12px 28px", fontWeight: "600", cursor: "pointer" }}>
             Ver mis ofertas
           </button>
-          <button onClick={() => { setDone(false); setStep(0); setForm({ titulo: "", empresa: "", ciudad: "", categoria: "", tipo_contrato: "Tiempo completo", salario: "", descripcion: "", requisitos: "", beneficios: "", activo: true, destacado: false }); }}
+          <button onClick={() => { setDone(false); setStep(0); setForm({ titulo: "", empresa: "", ciudad: "", categoria: "", tipo_contrato: "Tiempo completo", experiencia_minima: "", estudio_minimo: "", salario: "", descripcion: "", requisitos: "", beneficios: "", activo: true, destacado: false }); }}
             style={{ background: "white", color: "#1a56db", border: "1px solid #1a56db", borderRadius: "10px", padding: "12px 28px", fontWeight: "600", cursor: "pointer" }}>
             Publicar otra oferta
           </button>
@@ -150,6 +153,22 @@ export default function PublicarPage() {
                   <input style={inputStyle} value={form.salario} onChange={e => set("salario", e.target.value)} placeholder="Ej: Bs. 6.000 – 8.000" />
                 </div>
               </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <label style={labelStyle}>Experiencia mínima (opcional)</label>
+                  <select style={inputStyle} value={form.experiencia_minima} onChange={e => set("experiencia_minima", e.target.value)}>
+                    <option value="">No especificar</option>
+                    {EXPERIENCIAS.map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Estudios mínimos (opcional)</label>
+                  <select style={inputStyle} value={form.estudio_minimo} onChange={e => set("estudio_minimo", e.target.value)}>
+                    <option value="">No especificar</option>
+                    {ESTUDIOS.map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                </div>
+              </div>
             </div>
           )}
 
@@ -190,6 +209,7 @@ export default function PublicarPage() {
                 {[
                   ["Puesto", form.titulo], ["Empresa", form.empresa], ["Ciudad", form.ciudad],
                   ["Categoría", form.categoria], ["Tipo", form.tipo_contrato], ["Salario", form.salario || "A convenir"],
+                  ["Experiencia", form.experiencia_minima || "No especificada"], ["Estudios", form.estudio_minimo || "No especificados"],
                 ].map(([k, v]) => (
                   <div key={k} style={{ display: "flex", gap: "12px", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
                     <span style={{ color: "#64748b", fontSize: "13px", minWidth: "100px" }}>{k}</span>
