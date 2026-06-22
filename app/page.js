@@ -2,28 +2,16 @@
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Navbar, Footer, JobCard, logoColor, logoLetters } from "@/lib/components";
+import { Navbar, Footer, logoColor, logoLetters } from "@/lib/components";
 import HomeCandidato from "@/lib/home-candidato";
 import HomeEmpresa from "@/lib/home-empresa";
 
-// ─── TOKENS ─────────────────────────────────────────────────────────────────
-// Paleta editorial propia del proyecto — no el azul corporativo genérico.
-// Base oscura casi negra, verde profundo para empresa/trabajo, terracota
-// cálido como acento de marca, crema para contraste tipográfico.
-const INK = "#0B0F0E";       // negro-verde, fondo del hero
-const FOREST = "#1C2620";    // verde oscuro, superficies sobre INK
-const BONE = "#EFE8DA";      // hueso, texto principal sobre fondo oscuro
-const CLAY = "#D97D45";      // terracota, acento de marca / candidato
-const SAGE = "#7C9885";      // verde sage, acento empresa
-const PAPER = "#F6F2EA";     // crema claro, fondo general de la página
-
-const FONT_DISPLAY = "'Fraunces', serif";
-const FONT_BODY = "'Inter', sans-serif";
-
 // ─── ICONS ───────────────────────────────────────────────────────────────────
-const SearchIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>;
-const MapPinIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
-const ArrowIcon = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>;
+const SearchIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>;
+const MapPinIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
+const TrendingIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/><polyline points="16,7 22,7 22,13"/></svg>;
+const ClockIcon = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>;
+const CheckIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20,6 9,17 4,12"/></svg>;
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 const FEATURED_JOBS = [
@@ -31,37 +19,29 @@ const FEATURED_JOBS = [
   { id: 2, titulo: "Analista de Marketing Digital", empresa: "Tigo Bolivia", ciudad: "Santa Cruz", salario: "Bs. 5.500 – 7.000", tipo_contrato: "Tiempo completo", created_at: new Date(Date.now()-18000000).toISOString(), destacado: true },
   { id: 3, titulo: "Contador General", empresa: "Banco Fie", ciudad: "Cochabamba", salario: "Bs. 6.000 – 8.500", tipo_contrato: "Tiempo completo", created_at: new Date(Date.now()-86400000).toISOString(), destacado: false },
   { id: 4, titulo: "Ingeniero de Sistemas", empresa: "YPFB", ciudad: "La Paz", salario: "Bs. 9.000 – 14.000", tipo_contrato: "Tiempo completo", created_at: new Date(Date.now()-86400000).toISOString(), destacado: false },
+  { id: 5, titulo: "Jefe de Recursos Humanos", empresa: "Comibol", ciudad: "Oruro", salario: "Bs. 7.500 – 10.000", tipo_contrato: "Tiempo completo", created_at: new Date(Date.now()-172800000).toISOString(), destacado: false },
+  { id: 6, titulo: "Ejecutivo de Ventas Senior", empresa: "Grupo Salesland", ciudad: "Santa Cruz", salario: "Bs. 4.500 + comisiones", tipo_contrato: "Tiempo completo", created_at: new Date(Date.now()-172800000).toISOString(), destacado: false },
+];
+
+const CATEGORIES = [
+  { name: "Tecnología", icon: "💻", count: 156 },
+  { name: "Ventas", icon: "📊", count: 142 },
+  { name: "Administración", icon: "📋", count: 98 },
+  { name: "Marketing", icon: "📱", count: 76 },
+  { name: "Salud", icon: "🏥", count: 54 },
+  { name: "Educación", icon: "📚", count: 43 },
+  { name: "Ingeniería", icon: "⚙️", count: 89 },
+  { name: "Finanzas", icon: "💰", count: 67 },
 ];
 
 const DEPARTMENTS = ["La Paz","Santa Cruz","Cochabamba","Oruro","Potosí","Sucre","Tarija","Trinidad","Cobija"];
 
-const CATEGORIES = [
-  { name: "Tecnología", count: 156 }, { name: "Ventas", count: 142 },
-  { name: "Administración", count: 98 }, { name: "Marketing", count: 76 },
-  { name: "Salud", count: 54 }, { name: "Ingeniería", count: 89 },
-];
-
-// Las dos historias paralelas que la portada cuenta — una por audiencia.
-// El número no es decorativo: es el dato real que cada lado necesita ver
-// primero para decidir si sigue leyendo.
-const STORIES = {
-  candidato: {
-    eyebrow: "Para quien busca",
-    kicker: "18.400 ofertas activas",
-    headline: "Tu próximo trabajo está en Bolivia",
-    body: "Miles de empresas bolivianas publican ofertas reales todos los días. Crea tu perfil una vez y postula con un toque.",
-    cta: "Buscar empleo",
-    accent: CLAY,
-  },
-  empresa: {
-    eyebrow: "Para quien contrata",
-    kicker: "2.400 empresas activas",
-    headline: "El talento boliviano te está esperando",
-    body: "Publica tu oferta en minutos y llega a candidatos verificados en los 9 departamentos del país.",
-    cta: "Publicar oferta",
-    accent: SAGE,
-  },
-};
+function timeAgo(dateString) {
+  const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+  if (seconds < 3600) return `hace ${Math.floor(seconds/60)} min`;
+  if (seconds < 86400) return `hace ${Math.floor(seconds/3600)} horas`;
+  return `hace ${Math.floor(seconds/86400)} días`;
+}
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function HomePage() {
@@ -73,8 +53,8 @@ export default function HomePage() {
 
   if (!isLoaded) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: PAPER }}>
-        <div style={{ width: "36px", height: "36px", border: `3px solid #e5ddc8`, borderTopColor: CLAY, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}>
+        <div style={{ width: "40px", height: "40px", border: "3px solid #e2e8f0", borderTopColor: "#1a56db", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -95,173 +75,214 @@ export default function HomePage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: PAPER, fontFamily: FONT_BODY }}>
+    <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Inter', sans-serif" }}>
       <Navbar />
 
-      {/* ═══ HERO: portada dividida, dos historias en paralelo ═══════════════ */}
-      <section style={{ background: INK, position: "relative", overflow: "hidden" }}>
-        {/* Línea vertical de eje — la portada tiene un pliegue, no dos cajas */}
-        <div className="fold-line" style={{ position: "absolute", top: 0, bottom: 0, left: "50%", width: "1px", background: "rgba(239,232,218,0.12)" }} />
+      {/* ── DUAL ACCESS HERO ─────────────────────────────────────────────── */}
+      <section style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a56db 100%)", padding: "56px 20px 72px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: "-80px", right: "-80px", width: "400px", height: "400px", background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-        <div style={{ maxWidth: "1180px", margin: "0 auto", padding: "0 24px" }}>
-          <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "560px" }}>
-
-            {/* Columna candidato */}
-            <div style={{ padding: "64px 48px 56px 0", display: "flex", flexDirection: "column", justifyContent: "center", borderRight: "none" }}>
-              <Story data={STORIES.candidato} onClick={() => handleAcceso("candidato")} align="left" />
-            </div>
-
-            {/* Columna empresa */}
-            <div style={{ padding: "64px 0 56px 48px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <Story data={STORIES.empresa} onClick={() => handleAcceso("empresa")} align="left" />
-            </div>
+        <div style={{ maxWidth: "900px", margin: "0 auto", textAlign: "center" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: "20px", padding: "5px 14px", marginBottom: "20px" }}>
+            <TrendingIcon />
+            <span style={{ color: "#fbbf24", fontSize: "12px", fontWeight: "600" }}>+18.400 ofertas activas · Bolivia</span>
           </div>
 
-          {/* Buscador — vive en el pliegue, sirve a ambos lados */}
-          <div className="search-bridge" style={{ position: "relative", marginTop: "-28px", marginBottom: "0", zIndex: 5, display: "flex", justifyContent: "center" }}>
-            <div style={{ background: BONE, borderRadius: "999px", padding: "6px", boxShadow: "0 24px 48px -12px rgba(0,0,0,0.5)", display: "flex", gap: "4px", width: "100%", maxWidth: "640px", flexWrap: "wrap" }}>
-              <div style={{ flex: "1 1 200px", display: "flex", alignItems: "center", gap: "10px", padding: "11px 18px" }}>
-                <span style={{ color: "#8a8275" }}><SearchIcon /></span>
-                <input
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleSearch()}
-                  placeholder="Puesto, empresa o habilidad"
-                  style={{ border: "none", background: "transparent", outline: "none", fontSize: "14px", color: INK, width: "100%", fontFamily: FONT_BODY }}
-                />
+          <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: "800", fontSize: "clamp(1.8rem, 5vw, 3rem)", color: "white", lineHeight: "1.15", marginBottom: "14px", letterSpacing: "-0.5px" }}>
+            El trabajo que buscas<br /><span style={{ color: "#60a5fa" }}>está en Bolivia</span>
+          </h1>
+          <p style={{ color: "#94a3b8", fontSize: "16px", marginBottom: "40px" }}>
+            Conectamos talento boliviano con las mejores empresas del país
+          </p>
+
+          {/* DOS ACCESOS - Como InfoJobs */}
+          <div className="acceso-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", maxWidth: "600px", margin: "0 auto 36px" }}>
+            <button
+              onClick={() => handleAcceso("candidato")}
+              style={{ background: "white", border: "3px solid transparent", borderRadius: "14px", padding: "24px 16px", cursor: "pointer", textAlign: "center", transition: "all 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#60a5fa"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "transparent"; e.currentTarget.style.transform = "none"; }}
+            >
+              <div style={{ fontSize: "32px", marginBottom: "8px" }}>🙋</div>
+              <h3 style={{ fontWeight: "700", fontSize: "16px", color: "#0f172a", marginBottom: "4px" }}>Soy candidato</h3>
+              <p style={{ color: "#64748b", fontSize: "12px" }}>Busco empleo</p>
+            </button>
+
+            <button
+              onClick={() => handleAcceso("empresa")}
+              style={{ background: "linear-gradient(135deg, #1a56db, #3b82f6)", border: "3px solid transparent", borderRadius: "14px", padding: "24px 16px", cursor: "pointer", textAlign: "center", transition: "all 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(26,86,219,0.4)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
+            >
+              <div style={{ fontSize: "32px", marginBottom: "8px" }}>🏢</div>
+              <h3 style={{ fontWeight: "700", fontSize: "16px", color: "white", marginBottom: "4px" }}>Soy empresa</h3>
+              <p style={{ color: "#bfdbfe", fontSize: "12px" }}>Busco talento</p>
+            </button>
+          </div>
+
+          {/* Buscador */}
+          <div style={{ background: "white", borderRadius: "14px", padding: "8px", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", display: "flex", gap: "8px", maxWidth: "720px", margin: "0 auto", flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 200px", display: "flex", alignItems: "center", gap: "10px", padding: "8px 14px", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+              <span style={{ color: "#64748b" }}><SearchIcon /></span>
+              <input type="text" placeholder="Puesto, empresa o habilidad" style={{ border: "none", background: "transparent", outline: "none", fontSize: "14px", color: "#0f172a", width: "100%" }}
+                value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleSearch()} />
+            </div>
+            <div style={{ flex: "1 1 150px", display: "flex", alignItems: "center", gap: "10px", padding: "8px 14px", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+              <span style={{ color: "#64748b" }}><MapPinIcon /></span>
+              <select style={{ border: "none", background: "transparent", outline: "none", fontSize: "14px", color: searchLocation ? "#0f172a" : "#94a3b8", width: "100%", cursor: "pointer" }}
+                value={searchLocation} onChange={e => setSearchLocation(e.target.value)}>
+                <option value="">Todo Bolivia</option>
+                {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <button onClick={handleSearch} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "10px", padding: "12px 28px", fontWeight: "700", fontSize: "15px", cursor: "pointer" }}>
+              Buscar
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── STATS BAR ───────────────────────────────────────────────────────── */}
+      <div style={{ background: "white", borderBottom: "1px solid #e2e8f0" }}>
+        <div className="stats-row" style={{ maxWidth: "1000px", margin: "0 auto", padding: "0 20px", display: "flex", justifyContent: "center", flexWrap: "wrap" }}>
+          {[{ num: "18.400+", label: "Ofertas activas" }, { num: "2.400+", label: "Empresas" }, { num: "94.000+", label: "Candidatos" }, { num: "9", label: "Departamentos" }].map((s, i) => (
+            <div key={i} style={{ padding: "18px 32px", textAlign: "center", borderRight: i < 3 ? "1px solid #e2e8f0" : "none" }}>
+              <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: "800", fontSize: "22px", color: "#0f172a" }}>{s.num}</p>
+              <p style={{ color: "#64748b", fontSize: "12px" }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── OFERTAS DESTACADAS + SIDEBAR ─────────────────────────────────── */}
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "48px 20px" }}>
+        <div className="main-grid" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "32px" }}>
+
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div>
+                <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: "700", fontSize: "19px", color: "#0f172a" }}>Ofertas destacadas</h2>
+                <p style={{ color: "#64748b", fontSize: "13px" }}>Actualizadas hoy</p>
               </div>
-              <div style={{ width: "1px", background: "rgba(11,15,14,0.12)", margin: "8px 0" }} />
-              <div style={{ flex: "0 1 150px", display: "flex", alignItems: "center", gap: "8px", padding: "11px 14px" }}>
-                <span style={{ color: "#8a8275" }}><MapPinIcon /></span>
-                <select
-                  value={searchLocation}
-                  onChange={e => setSearchLocation(e.target.value)}
-                  style={{ border: "none", background: "transparent", outline: "none", fontSize: "13px", color: searchLocation ? INK : "#8a8275", width: "100%", cursor: "pointer", fontFamily: FONT_BODY }}
-                >
-                  <option value="">Bolivia</option>
-                  {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
-              </div>
-              <button onClick={handleSearch} style={{ background: INK, color: BONE, border: "none", borderRadius: "999px", padding: "12px 26px", fontWeight: "600", fontSize: "13px", cursor: "pointer", flexShrink: 0 }}>
-                Buscar
+              <a href="/buscar" style={{ color: "#1a56db", fontSize: "13px", fontWeight: "500", textDecoration: "none" }}>Ver todas →</a>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {FEATURED_JOBS.map(job => (
+                <div key={job.id} onClick={() => router.push(`/empleos/${job.id}`)}
+                  style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "20px", cursor: "pointer", transition: "all 0.2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.08)"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "#e2e8f0"; }}>
+                  <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+                    <div style={{ width: "48px", height: "48px", borderRadius: "10px", background: logoColor(job.empresa), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "700", fontSize: "13px", flexShrink: 0 }}>
+                      {logoLetters(job.empresa)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "4px" }}>
+                        <h3 style={{ fontWeight: "600", fontSize: "15px", color: "#0f172a", lineHeight: "1.3" }}>{job.titulo}</h3>
+                        {job.destacado && (
+                          <span style={{ background: "#fef3c7", color: "#b45309", fontSize: "11px", fontWeight: "600", padding: "2px 8px", borderRadius: "20px", flexShrink: 0, display: "flex", alignItems: "center", gap: "3px" }}>
+                            <TrendingIcon /> Destacado
+                          </span>
+                        )}
+                      </div>
+                      <p style={{ color: "#475569", fontSize: "13px", marginBottom: "10px" }}>{job.empresa}</p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "10px" }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#64748b" }}>
+                          <MapPinIcon /> {job.ciudad}
+                        </span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#64748b" }}>
+                          <ClockIcon /> {timeAgo(job.created_at)}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontWeight: "600", fontSize: "13px", color: "#059669" }}>{job.salario}</span>
+                        <span style={{ fontSize: "12px", color: "#1a56db", fontWeight: "500" }}>Ver oferta →</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <a href="/buscar" style={{ display: "block", textAlign: "center", marginTop: "16px", padding: "13px", background: "white", border: "2px dashed #cbd5e1", borderRadius: "12px", color: "#64748b", fontSize: "14px", fontWeight: "500", textDecoration: "none" }}>
+              Ver todas las ofertas →
+            </a>
+          </div>
+
+          {/* SIDEBAR */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div style={{ background: "linear-gradient(135deg, #eff4ff, #dbeafe)", border: "1px solid #bfdbfe", borderRadius: "14px", padding: "24px" }}>
+              <h3 style={{ fontWeight: "700", fontSize: "15px", color: "#0f172a", marginBottom: "6px" }}>¿Ya tienes cuenta?</h3>
+              <p style={{ color: "#475569", fontSize: "13px", marginBottom: "14px" }}>Inicia sesión para postular a ofertas o publicar como empresa</p>
+              <button onClick={() => handleAcceso("candidato")} style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "8px", padding: "10px", fontWeight: "600", fontSize: "13px", cursor: "pointer", width: "100%", marginBottom: "8px" }}>
+                Acceso candidatos
+              </button>
+              <button onClick={() => handleAcceso("empresa")} style={{ background: "white", color: "#1a56db", border: "1px solid #bfdbfe", borderRadius: "8px", padding: "10px", fontWeight: "600", fontSize: "13px", cursor: "pointer", width: "100%" }}>
+                Acceso empresas
+              </button>
+            </div>
+
+            <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "20px" }}>
+              <h3 style={{ fontWeight: "700", fontSize: "15px", color: "#0f172a", marginBottom: "14px" }}>Explorar por sector</h3>
+              {CATEGORIES.slice(0, 7).map(cat => (
+                <a href={`/buscar?categoria=${cat.name}`} key={cat.name}
+                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: "8px", cursor: "pointer", textDecoration: "none", transition: "background 0.15s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#0f172a" }}>
+                    <span style={{ fontSize: "15px" }}>{cat.icon}</span> {cat.name}
+                  </span>
+                  <span style={{ background: "#f1f5f9", color: "#475569", fontSize: "11px", padding: "2px 7px", borderRadius: "10px" }}>{cat.count}</span>
+                </a>
+              ))}
+            </div>
+
+            <div style={{ background: "#0f172a", borderRadius: "14px", padding: "24px", textAlign: "center" }}>
+              <p style={{ fontSize: "28px", marginBottom: "8px" }}>🏢</p>
+              <h3 style={{ fontWeight: "700", fontSize: "15px", color: "white", marginBottom: "8px" }}>¿Buscas talento?</h3>
+              <p style={{ color: "#94a3b8", fontSize: "13px", marginBottom: "16px" }}>Publica tu oferta y llega a miles de candidatos bolivianos.</p>
+              <button onClick={() => handleAcceso("empresa")} style={{ background: "#f59e0b", color: "#0f172a", border: "none", borderRadius: "8px", padding: "10px", fontWeight: "700", fontSize: "13px", cursor: "pointer", width: "100%" }}>
+                Acceso empresas
               </button>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* ═══ OFERTAS DESTACADAS ════════════════════════════════════════════ */}
-      <section style={{ maxWidth: "1180px", margin: "0 auto", padding: "96px 24px 64px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "32px", flexWrap: "wrap", gap: "12px" }}>
-          <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: "600", fontSize: "28px", color: INK, letterSpacing: "-0.5px" }}>
-            Publicado esta semana
-          </h2>
-          <a href="/buscar" style={{ color: CLAY, fontSize: "13px", fontWeight: "600", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px" }}>
-            Ver todas <ArrowIcon />
-          </a>
-        </div>
-
-        <div className="jobs-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1px", background: "#e5ddc8", border: "1px solid #e5ddc8" }}>
-          {FEATURED_JOBS.map(job => (
-            <div key={job.id} onClick={() => router.push(`/empleos/${job.id}`)} style={{ background: PAPER, padding: "28px", cursor: "pointer", transition: "background 0.15s" }}
-              onMouseEnter={e => e.currentTarget.style.background = "white"}
-              onMouseLeave={e => e.currentTarget.style.background = PAPER}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
-                <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: logoColor(job.empresa), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "700", fontSize: "12px" }}>
-                  {logoLetters(job.empresa)}
-                </div>
-                {job.destacado && <span style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "0.5px", color: CLAY, textTransform: "uppercase" }}>Destacada</span>}
+        {/* ── POR QUÉ EMPLEOYABOLIVIA ─────────────────────────────────────── */}
+        <div style={{ marginTop: "64px", background: "white", borderRadius: "20px", padding: "48px 40px", border: "1px solid #e2e8f0" }}>
+          <div style={{ textAlign: "center", marginBottom: "40px" }}>
+            <span style={{ background: "#eff4ff", color: "#1a56db", fontSize: "12px", fontWeight: "600", padding: "4px 14px", borderRadius: "20px", display: "inline-block", marginBottom: "12px" }}>POR QUÉ ELEGIRNOS</span>
+            <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: "800", fontSize: "22px", color: "#0f172a", marginBottom: "8px" }}>El portal de empleos más completo de Bolivia</h2>
+          </div>
+          <div className="benefits-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px" }}>
+            {[
+              ["🎯", "Ofertas verificadas", "Todas las empresas pasan por un proceso de validación antes de publicar."],
+              ["⚡", "Postula en segundos", "Tu perfil queda guardado — postula con un solo toque a cualquier oferta."],
+              ["📊", "Sigue tu progreso", "Ve el estado de cada postulación: revisión, entrevista o respuesta final."],
+              ["🇧🇴", "100% boliviano", "Hecho para el mercado laboral local, con los 9 departamentos cubiertos."],
+            ].map(([icon, title, desc]) => (
+              <div key={title} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: "28px", marginBottom: "10px" }}>{icon}</div>
+                <h3 style={{ fontWeight: "700", fontSize: "14px", color: "#0f172a", marginBottom: "6px" }}>{title}</h3>
+                <p style={{ color: "#64748b", fontSize: "13px", lineHeight: "1.6" }}>{desc}</p>
               </div>
-              <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: "600", fontSize: "19px", color: INK, marginBottom: "4px" }}>{job.titulo}</h3>
-              <p style={{ color: "#6b6457", fontSize: "13px", marginBottom: "16px" }}>{job.empresa} · {job.ciudad}</p>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "14px", borderTop: "1px solid #e5ddc8" }}>
-                <span style={{ fontWeight: "600", fontSize: "13px", color: "#3d6b52" }}>{job.salario}</span>
-                <span style={{ fontSize: "12px", color: "#8a8275" }}>{job.tipo_contrato}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ═══ CATEGORÍAS — lista editorial, no tarjetas ════════════════════ */}
-      <section style={{ maxWidth: "1180px", margin: "0 auto", padding: "0 24px 96px" }}>
-        <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: "600", fontSize: "28px", color: INK, marginBottom: "8px", letterSpacing: "-0.5px" }}>
-          Sectores con más movimiento
-        </h2>
-        <p style={{ color: "#6b6457", fontSize: "14px", marginBottom: "36px" }}>Donde se concentran las ofertas activas en este momento</p>
-
-        <div>
-          {CATEGORIES.map((cat, i) => (
-            <a key={cat.name} href={`/buscar?categoria=${cat.name}`}
-              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 4px", borderTop: i === 0 ? "1px solid #e5ddc8" : "none", borderBottom: "1px solid #e5ddc8", textDecoration: "none", transition: "padding-left 0.15s" }}
-              onMouseEnter={e => e.currentTarget.style.paddingLeft = "14px"}
-              onMouseLeave={e => e.currentTarget.style.paddingLeft = "4px"}>
-              <span style={{ fontFamily: FONT_DISPLAY, fontSize: "20px", color: INK, fontWeight: "500" }}>{cat.name}</span>
-              <span style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <span style={{ fontSize: "13px", color: "#8a8275" }}>{cat.count} ofertas</span>
-                <ArrowIcon />
-              </span>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      {/* ═══ CIERRE — vuelve a las dos historias, en forma de invitación ══ */}
-      <section style={{ background: FOREST, padding: "80px 24px" }}>
-        <div style={{ maxWidth: "720px", margin: "0 auto", textAlign: "center" }}>
-          <p style={{ fontFamily: FONT_DISPLAY, fontStyle: "italic", fontSize: "15px", color: "rgba(239,232,218,0.6)", marginBottom: "16px" }}>
-            Hecho en Bolivia, para Bolivia
-          </p>
-          <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: "600", fontSize: "clamp(1.6rem, 4vw, 2.2rem)", color: BONE, lineHeight: "1.3", marginBottom: "36px" }}>
-            Cualquiera sea tu lado de la mesa, el siguiente paso toma un minuto.
-          </h2>
-          <div style={{ display: "flex", gap: "14px", justifyContent: "center", flexWrap: "wrap" }}>
-            <button onClick={() => handleAcceso("candidato")} style={{ background: CLAY, color: INK, border: "none", borderRadius: "999px", padding: "13px 28px", fontWeight: "700", fontSize: "14px", cursor: "pointer" }}>
-              Busco empleo
-            </button>
-            <button onClick={() => handleAcceso("empresa")} style={{ background: "transparent", color: BONE, border: `1px solid rgba(239,232,218,0.3)`, borderRadius: "999px", padding: "13px 28px", fontWeight: "600", fontSize: "14px", cursor: "pointer" }}>
-              Busco talento
-            </button>
+            ))}
           </div>
         </div>
-      </section>
+      </div>
 
       <Footer />
-
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap');
-
-        @media (max-width: 860px) {
-          .hero-grid { grid-template-columns: 1fr !important; min-height: auto !important; }
-          .fold-line { display: none; }
-          .hero-grid > div { padding: 40px 0 32px 0 !important; border: none !important; }
-          .jobs-grid { grid-template-columns: 1fr !important; }
-          .search-bridge { margin-top: 24px !important; padding: 0 8px; }
+        @media (max-width: 768px) {
+          .acceso-grid { grid-template-columns: 1fr 1fr !important; }
+          .main-grid { grid-template-columns: 1fr !important; }
+          .benefits-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .benefits-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
-    </div>
-  );
-}
-
-// ─── Story: una columna de la portada (candidato o empresa) ──────────────────
-function Story({ data, onClick }) {
-  return (
-    <div>
-      <p style={{ fontSize: "12px", fontWeight: "600", letterSpacing: "1px", textTransform: "uppercase", color: data.accent, marginBottom: "18px" }}>
-        {data.eyebrow}
-      </p>
-      <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: "600", fontSize: "clamp(1.9rem, 3.4vw, 2.7rem)", color: "#EFE8DA", lineHeight: "1.08", letterSpacing: "-0.5px", marginBottom: "18px" }}>
-        {data.headline}
-      </h1>
-      <p style={{ color: "rgba(239,232,218,0.65)", fontSize: "15px", lineHeight: "1.6", marginBottom: "28px", maxWidth: "360px" }}>
-        {data.body}
-      </p>
-      <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
-        <button onClick={onClick} style={{ background: data.accent, color: "#0B0F0E", border: "none", borderRadius: "999px", padding: "12px 24px", fontWeight: "700", fontSize: "13.5px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
-          {data.cta} <span style={{ fontSize: "11px" }}>→</span>
-        </button>
-        <span style={{ fontSize: "13px", color: "rgba(239,232,218,0.45)" }}>{data.kicker}</span>
-      </div>
     </div>
   );
 }
