@@ -1,8 +1,9 @@
 "use client";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Navbar, Footer, logoColor, logoLetters } from "@/lib/components";
+import { useState, useEffect } from "react";
+import { Navbar, Footer, JobCard, Spinner, ErrorMessage, logoColor, logoLetters } from "@/lib/components";
+import { getEmpleos } from "@/lib/supabase";
 import HomeCandidato from "@/lib/home-candidato";
 import HomeEmpresa from "@/lib/home-empresa";
 
@@ -14,15 +15,6 @@ const ClockIcon = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="no
 const CheckIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20,6 9,17 4,12"/></svg>;
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
-const FEATURED_JOBS = [
-  { id: 1, titulo: "Desarrollador Full Stack", empresa: "Entel Bolivia", ciudad: "La Paz", salario: "Bs. 8.000 – 12.000", tipo_contrato: "Tiempo completo", created_at: new Date(Date.now()-7200000).toISOString(), destacado: true },
-  { id: 2, titulo: "Analista de Marketing Digital", empresa: "Tigo Bolivia", ciudad: "Santa Cruz", salario: "Bs. 5.500 – 7.000", tipo_contrato: "Tiempo completo", created_at: new Date(Date.now()-18000000).toISOString(), destacado: true },
-  { id: 3, titulo: "Contador General", empresa: "Banco Fie", ciudad: "Cochabamba", salario: "Bs. 6.000 – 8.500", tipo_contrato: "Tiempo completo", created_at: new Date(Date.now()-86400000).toISOString(), destacado: false },
-  { id: 4, titulo: "Ingeniero de Sistemas", empresa: "YPFB", ciudad: "La Paz", salario: "Bs. 9.000 – 14.000", tipo_contrato: "Tiempo completo", created_at: new Date(Date.now()-86400000).toISOString(), destacado: false },
-  { id: 5, titulo: "Jefe de Recursos Humanos", empresa: "Comibol", ciudad: "Oruro", salario: "Bs. 7.500 – 10.000", tipo_contrato: "Tiempo completo", created_at: new Date(Date.now()-172800000).toISOString(), destacado: false },
-  { id: 6, titulo: "Ejecutivo de Ventas Senior", empresa: "Grupo Salesland", ciudad: "Santa Cruz", salario: "Bs. 4.500 + comisiones", tipo_contrato: "Tiempo completo", created_at: new Date(Date.now()-172800000).toISOString(), destacado: false },
-];
-
 const CATEGORIES = [
   { name: "Tecnología", icon: "💻", count: 156 },
   { name: "Ventas", icon: "📊", count: 142 },
@@ -36,20 +28,27 @@ const CATEGORIES = [
 
 const DEPARTMENTS = ["La Paz","Santa Cruz","Cochabamba","Oruro","Potosí","Sucre","Tarija","Trinidad","Cobija"];
 
-function timeAgo(dateString) {
-  const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
-  if (seconds < 3600) return `hace ${Math.floor(seconds/60)} min`;
-  if (seconds < 86400) return `hace ${Math.floor(seconds/3600)} horas`;
-  return `hace ${Math.floor(seconds/86400)} días`;
-}
-
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
+  const [ofertas, setOfertas] = useState([]);
+  const [loadingOfertas, setLoadingOfertas] = useState(true);
+  const [errorOfertas, setErrorOfertas] = useState(false);
   const role = user?.unsafeMetadata?.role || null;
+
+  const cargarOfertas = () => {
+    setLoadingOfertas(true);
+    setErrorOfertas(false);
+    getEmpleos({ limit: 6 })
+      .then(r => setOfertas(r.data || []))
+      .catch(e => { console.error(e); setErrorOfertas(true); })
+      .finally(() => setLoadingOfertas(false));
+  };
+
+  useEffect(() => { cargarOfertas(); }, []);
 
   if (!isLoaded) {
     return (
@@ -169,41 +168,20 @@ export default function HomePage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {FEATURED_JOBS.map(job => (
-                <div key={job.id} onClick={() => router.push(`/empleos/${job.id}`)}
-                  style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "20px", cursor: "pointer", transition: "all 0.2s" }}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.08)"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
-                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "#e2e8f0"; }}>
-                  <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
-                    <div style={{ width: "48px", height: "48px", borderRadius: "10px", background: logoColor(job.empresa), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "700", fontSize: "13px", flexShrink: 0 }}>
-                      {logoLetters(job.empresa)}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "4px" }}>
-                        <h3 style={{ fontWeight: "600", fontSize: "15px", color: "#0f172a", lineHeight: "1.3" }}>{job.titulo}</h3>
-                        {job.destacado && (
-                          <span style={{ background: "#fef3c7", color: "#b45309", fontSize: "11px", fontWeight: "600", padding: "2px 8px", borderRadius: "20px", flexShrink: 0, display: "flex", alignItems: "center", gap: "3px" }}>
-                            <TrendingIcon /> Destacado
-                          </span>
-                        )}
-                      </div>
-                      <p style={{ color: "#475569", fontSize: "13px", marginBottom: "10px" }}>{job.empresa}</p>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "10px" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#64748b" }}>
-                          <MapPinIcon /> {job.ciudad}
-                        </span>
-                        <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#64748b" }}>
-                          <ClockIcon /> {timeAgo(job.created_at)}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontWeight: "600", fontSize: "13px", color: "#059669" }}>{job.salario}</span>
-                        <span style={{ fontSize: "12px", color: "#1a56db", fontWeight: "500" }}>Ver oferta →</span>
-                      </div>
-                    </div>
-                  </div>
+              {loadingOfertas ? (
+                <Spinner />
+              ) : errorOfertas ? (
+                <ErrorMessage onRetry={cargarOfertas} />
+              ) : ofertas.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "50px 20px", background: "white", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+                  <p style={{ fontSize: "36px", marginBottom: "10px" }}>📋</p>
+                  <p style={{ color: "#64748b", fontSize: "14px" }}>Aún no hay ofertas publicadas. ¡Sé el primero en publicar una!</p>
                 </div>
-              ))}
+              ) : (
+                ofertas.map(job => (
+                  <JobCard key={job.id} job={job} onClick={() => router.push(`/empleos/${job.id}`)} />
+                ))
+              )}
             </div>
             <a href="/buscar" style={{ display: "block", textAlign: "center", marginTop: "16px", padding: "13px", background: "white", border: "2px dashed #cbd5e1", borderRadius: "12px", color: "#64748b", fontSize: "14px", fontWeight: "500", textDecoration: "none" }}>
               Ver todas las ofertas →
