@@ -27,14 +27,14 @@ export default function CandidatoLoginPage() {
     },
   };
 
-  // Si ya hay sesión activa (recién logueado vía Google, o ya tenía sesión
-  // de antes), no mostramos el formulario de login — solo un spinner limpio
-  // mientras AutoAssignRole decide a dónde redirigir. Evita el parpadeo de
-  // ver el formulario completo durante el instante de la redirección.
-  if (isLoaded && isSignedIn) {
+  // Mientras Clerk todavía no confirma si hay sesión (isLoaded === false),
+  // o si ya confirmó que SÍ hay sesión activa, mostramos solo un spinner —
+  // nunca el formulario. Esto evita el parpadeo: el formulario solo se
+  // muestra una vez que estamos seguros de que NO hay sesión.
+  if (!isLoaded || isSignedIn) {
     return (
       <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f172a, #1e3a5f, #1a56db)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <AutoAssignRole role="candidato" redirectTo="/dashboard" firstTimeRedirectTo="/perfil?onboarding=1" />
+        {isLoaded && isSignedIn && <AutoAssignRole role="candidato" redirectTo="/dashboard" firstTimeRedirectTo="/perfil?onboarding=1" />}
         <div style={{ width: "36px", height: "36px", border: "3px solid rgba(255,255,255,0.2)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
