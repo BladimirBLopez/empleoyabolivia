@@ -233,19 +233,51 @@ export default function HomePage() {
             <span style={{ background: "#eff4ff", color: "#1a56db", fontSize: "12px", fontWeight: "600", padding: "4px 14px", borderRadius: "20px", display: "inline-block", marginBottom: "12px" }}>POR QUÉ ELEGIRNOS</span>
             <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: "800", fontSize: "22px", color: "#0f172a", marginBottom: "8px" }}>El portal de empleos más completo de Bolivia</h2>
           </div>
-          <div className="benefits-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px" }}>
-            {[
-              ["🎯", "Ofertas verificadas", "Todas las empresas pasan por un proceso de validación antes de publicar."],
-              ["⚡", "Postula en segundos", "Tu perfil queda guardado — postula con un solo toque a cualquier oferta."],
-              ["📊", "Sigue tu progreso", "Ve el estado de cada postulación: revisión, entrevista o respuesta final."],
-              ["🇧🇴", "100% boliviano", "Hecho para el mercado laboral local, con los 9 departamentos cubiertos."],
-            ].map(([icon, title, desc]) => (
-              <div key={title} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "28px", marginBottom: "10px" }}>{icon}</div>
-                <h3 style={{ fontWeight: "700", fontSize: "14px", color: "#0f172a", marginBottom: "6px" }}>{title}</h3>
-                <p style={{ color: "#64748b", fontSize: "13px", lineHeight: "1.6" }}>{desc}</p>
+
+          <div className="why-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px" }}>
+            {/* Columna candidato */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "24px" }}>
+                <span style={{ fontSize: "20px" }}>🙋</span>
+                <h3 style={{ fontWeight: "700", fontSize: "15px", color: "#0f172a" }}>Si buscas empleo</h3>
               </div>
-            ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                {[
+                  ["⚡", "Postula en segundos", "Tu perfil queda guardado — postula con un solo toque a cualquier oferta."],
+                  ["📊", "Sigue tu progreso", "Ve el estado de cada postulación: revisión, entrevista o respuesta final."],
+                ].map(([icon, title, desc]) => (
+                  <div key={title} style={{ display: "flex", gap: "14px" }}>
+                    <span style={{ fontSize: "22px", flexShrink: 0 }}>{icon}</span>
+                    <div>
+                      <h4 style={{ fontWeight: "700", fontSize: "14px", color: "#0f172a", marginBottom: "4px" }}>{title}</h4>
+                      <p style={{ color: "#64748b", fontSize: "13px", lineHeight: "1.6" }}>{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Columna empresa */}
+            <div style={{ borderLeft: "1px solid #e2e8f0", paddingLeft: "40px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "24px" }}>
+                <span style={{ fontSize: "20px" }}>🏢</span>
+                <h3 style={{ fontWeight: "700", fontSize: "15px", color: "#0f172a" }}>Si buscas talento</h3>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                {[
+                  ["🎯", "Candidatos verificados", "Cada perfil pasa por un proceso de registro completo antes de postular."],
+                  ["🇧🇴", "Alcance nacional", "Llega a candidatos en los 9 departamentos de Bolivia, sin costo de publicación."],
+                ].map(([icon, title, desc]) => (
+                  <div key={title} style={{ display: "flex", gap: "14px" }}>
+                    <span style={{ fontSize: "22px", flexShrink: 0 }}>{icon}</span>
+                    <div>
+                      <h4 style={{ fontWeight: "700", fontSize: "14px", color: "#0f172a", marginBottom: "4px" }}>{title}</h4>
+                      <p style={{ color: "#64748b", fontSize: "13px", lineHeight: "1.6" }}>{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -255,10 +287,8 @@ export default function HomePage() {
         @media (max-width: 768px) {
           .acceso-grid { grid-template-columns: 1fr 1fr !important; }
           .main-grid { grid-template-columns: 1fr !important; }
-          .benefits-grid { grid-template-columns: 1fr 1fr !important; }
-        }
-        @media (max-width: 480px) {
-          .benefits-grid { grid-template-columns: 1fr !important; }
+          .why-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+          .why-grid > div:last-child { border-left: none !important; padding-left: 0 !important; border-top: 1px solid #e2e8f0; padding-top: 32px; }
         }
       `}</style>
     </div>
