@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Navbar, Footer, Spinner } from "@/lib/components";
+import { Navbar, Footer, Spinner, ErrorMessage } from "@/lib/components";
 import { getPerfil, upsertPerfil } from "@/lib/supabase";
 import { Suspense } from "react";
 
@@ -22,6 +22,7 @@ function PerfilWizardContent() {
   const isOnboarding = params.get("onboarding") === "1";
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -35,12 +36,16 @@ function PerfilWizardContent() {
 
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setSaved(false); };
 
-  useEffect(() => {
+  const cargarPerfil = () => {
     if (!isSignedIn) return;
+    setLoading(true);
+    setLoadError(false);
     getPerfil(user.id).then(data => {
       if (data) setForm(f => ({ ...f, ...data }));
-    }).catch(console.error).finally(() => setLoading(false));
-  }, [isSignedIn, user?.id]);
+    }).catch(e => { console.error(e); setLoadError(true); }).finally(() => setLoading(false));
+  };
+
+  useEffect(() => { cargarPerfil(); }, [isSignedIn, user?.id]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -146,7 +151,7 @@ function PerfilWizardContent() {
           </div>
         )}
 
-        {loading ? <Spinner /> : (
+        {loading ? <Spinner /> : loadError ? <ErrorMessage onRetry={cargarPerfil} /> : (
           <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "28px", marginTop: isOnboarding ? "20px" : 0 }}>
 
             {/* PASO 0 — Datos personales */}

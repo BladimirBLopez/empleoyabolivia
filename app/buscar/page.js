@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Navbar, Footer, JobCard, Spinner } from "@/lib/components";
+import { Navbar, Footer, JobCard, Spinner, ErrorMessage } from "@/lib/components";
 import { getEmpleos } from "@/lib/supabase";
 
 const CATEGORIAS = ["Tecnología","Ventas","Administración","Marketing","Salud","Educación","Ingeniería","Finanzas","Minería","Telecomunicaciones","Energía","Logística"];
@@ -60,6 +60,7 @@ function BuscarContent() {
   const [empleos, setEmpleos] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [page, setPage] = useState(0);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
 
@@ -67,6 +68,7 @@ function BuscarContent() {
 
   const fetchEmpleos = useCallback(async (reset = true) => {
     setLoading(true);
+    setError(false);
     try {
       const offset = reset ? 0 : page * PAGE_SIZE;
       const { data, count } = await getEmpleos({ search, location, categoria, tipo, experiencia, estudio, limit: PAGE_SIZE, offset });
@@ -75,6 +77,7 @@ function BuscarContent() {
       if (reset) setPage(0);
     } catch (e) {
       console.error(e);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -137,6 +140,8 @@ function BuscarContent() {
         {/* RESULTS */}
         {loading && empleos.length === 0 ? (
           <Spinner />
+        ) : error ? (
+          <ErrorMessage onRetry={() => fetchEmpleos(true)} />
         ) : empleos.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px", background: "white", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
             <p style={{ fontSize: "40px", marginBottom: "12px" }}>🔍</p>

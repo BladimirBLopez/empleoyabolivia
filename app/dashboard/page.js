@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Navbar, Footer, Spinner, EstadoBadge, MapPinIcon, BriefcaseIcon, logoLetters, logoColor, timeAgo } from "@/lib/components";
+import { Navbar, Footer, Spinner, ErrorMessage, EstadoBadge, MapPinIcon, BriefcaseIcon, logoLetters, logoColor, timeAgo } from "@/lib/components";
 import { getPostulacionesCandidato } from "@/lib/supabase";
 
 export default function DashboardPage() {
@@ -11,12 +11,20 @@ export default function DashboardPage() {
   const router = useRouter();
   const [postulaciones, setPostulaciones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const role = user?.unsafeMetadata?.role;
 
-  useEffect(() => {
+  const cargarPostulaciones = () => {
     if (!isSignedIn) return;
-    getPostulacionesCandidato(user.id).then(setPostulaciones).catch(console.error).finally(() => setLoading(false));
-  }, [isSignedIn, user?.id]);
+    setLoading(true);
+    setError(false);
+    getPostulacionesCandidato(user.id)
+      .then(setPostulaciones)
+      .catch(e => { console.error(e); setError(true); })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { cargarPostulaciones(); }, [isSignedIn, user?.id]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -94,7 +102,7 @@ export default function DashboardPage() {
         {/* POSTULACIONES */}
         <h2 style={{ fontWeight: "700", fontSize: "18px", color: "#0f172a", marginBottom: "16px" }}>Mis postulaciones</h2>
 
-        {loading ? <Spinner /> : postulaciones.length === 0 ? (
+        {loading ? <Spinner /> : error ? <ErrorMessage onRetry={cargarPostulaciones} /> : postulaciones.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px", background: "white", borderRadius: "14px", border: "1px solid #e2e8f0" }}>
             <p style={{ fontSize: "48px", marginBottom: "12px" }}>📭</p>
             <p style={{ fontWeight: "600", color: "#0f172a", marginBottom: "6px" }}>Aún no has postulado a ninguna oferta</p>

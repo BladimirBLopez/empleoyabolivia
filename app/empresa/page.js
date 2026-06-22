@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Navbar, Footer, Spinner, EstadoBadge, timeAgo, logoLetters, logoColor } from "@/lib/components";
+import { Navbar, Footer, Spinner, ErrorMessage, EstadoBadge, timeAgo, logoLetters, logoColor } from "@/lib/components";
 import { getEmpleosPorEmpresa, toggleEmpleo, eliminarEmpleo, getPostulacionesEmpleo, actualizarEstadoPostulacion } from "@/lib/supabase";
 
 export default function EmpresaPage() {
@@ -12,17 +12,20 @@ export default function EmpresaPage() {
   const role = user?.unsafeMetadata?.role;
   const [empleos, setEmpleos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [vistaEmpleo, setVistaEmpleo] = useState(null); // id de empleo con postulaciones abiertas
   const [postulaciones, setPostulaciones] = useState([]);
   const [loadingPost, setLoadingPost] = useState(false);
+  const [errorPost, setErrorPost] = useState(false);
   const [tab, setTab] = useState("ofertas"); // 'ofertas' | 'postulaciones'
 
   const fetchEmpleos = async () => {
     setLoading(true);
+    setError(false);
     try {
       const data = await getEmpleosPorEmpresa(user.id);
       setEmpleos(data || []);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); setError(true); }
     finally { setLoading(false); }
   };
 
@@ -49,10 +52,11 @@ export default function EmpresaPage() {
     setVistaEmpleo(empleo);
     setTab("postulaciones");
     setLoadingPost(true);
+    setErrorPost(false);
     try {
       const data = await getPostulacionesEmpleo(empleo.id);
       setPostulaciones(data || []);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); setErrorPost(true); }
     finally { setLoadingPost(false); }
   };
 
@@ -124,7 +128,7 @@ export default function EmpresaPage() {
 
         {/* OFERTAS */}
         {tab === "ofertas" && (
-          loading ? <Spinner /> : empleos.length === 0 ? (
+          loading ? <Spinner /> : error ? <ErrorMessage onRetry={fetchEmpleos} /> : empleos.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px", background: "white", borderRadius: "14px", border: "1px solid #e2e8f0" }}>
               <p style={{ fontSize: "48px", marginBottom: "12px" }}>📋</p>
               <p style={{ fontWeight: "600", color: "#0f172a", marginBottom: "6px" }}>No tienes ofertas publicadas</p>
@@ -175,7 +179,7 @@ export default function EmpresaPage() {
               <p style={{ color: "#64748b" }}>Selecciona una oferta en la pestaña "Mis ofertas" para ver sus candidatos</p>
               <button onClick={() => setTab("ofertas")} style={{ marginTop: "12px", background: "#1a56db", color: "white", border: "none", borderRadius: "8px", padding: "8px 20px", cursor: "pointer", fontSize: "13px" }}>Ver mis ofertas</button>
             </div>
-          ) : loadingPost ? <Spinner /> : postulaciones.length === 0 ? (
+          ) : loadingPost ? <Spinner /> : errorPost ? <ErrorMessage onRetry={() => verPostulaciones(vistaEmpleo)} /> : postulaciones.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px", background: "white", borderRadius: "14px", border: "1px solid #e2e8f0" }}>
               <p style={{ fontSize: "40px", marginBottom: "12px" }}>📭</p>
               <p style={{ color: "#64748b" }}>Aún no hay candidatos para esta oferta</p>

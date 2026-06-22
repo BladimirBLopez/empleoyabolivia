@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Navbar, Footer, Spinner, EstadoBadge } from "@/lib/components";
+import { Navbar, Footer, Spinner, ErrorMessage, EstadoBadge } from "@/lib/components";
 import { getCandidatosPorEmpresa, actualizarEstadoPostulacion } from "@/lib/supabase";
 
 export default function CandidatosPage() {
@@ -12,14 +12,22 @@ export default function CandidatosPage() {
 
   const [postulaciones, setPostulaciones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [filtroOferta, setFiltroOferta] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [expandido, setExpandido] = useState(null);
 
-  useEffect(() => {
+  const cargarCandidatos = () => {
     if (!isSignedIn) return;
-    getCandidatosPorEmpresa(user.id).then(setPostulaciones).catch(console.error).finally(() => setLoading(false));
-  }, [isSignedIn, user?.id]);
+    setLoading(true);
+    setError(false);
+    getCandidatosPorEmpresa(user.id)
+      .then(setPostulaciones)
+      .catch(e => { console.error(e); setError(true); })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { cargarCandidatos(); }, [isSignedIn, user?.id]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -101,7 +109,7 @@ export default function CandidatosPage() {
           )}
         </div>
 
-        {loading ? <Spinner /> : filtradas.length === 0 ? (
+        {loading ? <Spinner /> : error ? <ErrorMessage onRetry={cargarCandidatos} /> : filtradas.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px", background: "white", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
             <p style={{ fontSize: "40px", marginBottom: "12px" }}>👥</p>
             <p style={{ fontWeight: "600", color: "#0f172a", marginBottom: "6px" }}>
