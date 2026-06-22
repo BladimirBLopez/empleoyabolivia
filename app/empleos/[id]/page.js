@@ -111,8 +111,33 @@ export default function DetalleEmpleoPage() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "22px", position: "sticky", top: "84px" }}>
-            <p style={{ fontWeight: "700", fontSize: "16px", color: "#059669", marginBottom: "4px" }}>{job.salario || "Salario a convenir"}</p>
-            <p style={{ color: "#64748b", fontSize: "12px", marginBottom: "18px" }}>{job.categoria}</p>
+            <div style={{ marginBottom: "16px" }}>
+              <p style={{ color: "#94a3b8", fontSize: "11px", fontWeight: "600", textTransform: "uppercase", marginBottom: "3px" }}>Salario</p>
+              <p style={{ fontWeight: "700", fontSize: "17px", color: "#059669" }}>{job.salario || "A convenir"}</p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px", paddingTop: "16px", borderTop: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#64748b", fontSize: "13px" }}>Categoría</span>
+                <span style={{ color: "#0f172a", fontSize: "13px", fontWeight: "500" }}>{job.categoria}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#64748b", fontSize: "13px" }}>Modalidad</span>
+                <span style={{ color: "#0f172a", fontSize: "13px", fontWeight: "500" }}>{job.tipo_contrato}</span>
+              </div>
+              {job.experiencia_minima && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#64748b", fontSize: "13px" }}>Experiencia</span>
+                  <span style={{ color: "#0f172a", fontSize: "13px", fontWeight: "500" }}>{job.experiencia_minima}</span>
+                </div>
+              )}
+              {job.estudio_minimo && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#64748b", fontSize: "13px" }}>Estudios mínimos</span>
+                  <span style={{ color: "#0f172a", fontSize: "13px", fontWeight: "500" }}>{job.estudio_minimo}</span>
+                </div>
+              )}
+            </div>
 
             {postulado ? (
               <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: "10px", padding: "14px", textAlign: "center" }}>
