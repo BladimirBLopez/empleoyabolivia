@@ -1,9 +1,10 @@
 "use client";
-import { SignIn, SignUp } from "@clerk/nextjs";
+import { SignIn, SignUp, useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { AutoAssignRole } from "@/lib/role";
 
 export default function CandidatoLoginPage() {
+  const { isSignedIn, isLoaded } = useUser();
   const [mode, setMode] = useState("sign-in"); // "sign-in" | "sign-up"
 
   const appearance = {
@@ -26,9 +27,22 @@ export default function CandidatoLoginPage() {
     },
   };
 
+  // Si ya hay sesión activa (recién logueado vía Google, o ya tenía sesión
+  // de antes), no mostramos el formulario de login — solo un spinner limpio
+  // mientras AutoAssignRole decide a dónde redirigir. Evita el parpadeo de
+  // ver el formulario completo durante el instante de la redirección.
+  if (isLoaded && isSignedIn) {
+    return (
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f172a, #1e3a5f, #1a56db)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <AutoAssignRole role="candidato" redirectTo="/dashboard" firstTimeRedirectTo="/perfil?onboarding=1" />
+        <div style={{ width: "36px", height: "36px", border: "3px solid rgba(255,255,255,0.2)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f172a, #1e3a5f, #1a56db)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 16px", fontFamily: "'Inter', sans-serif" }}>
-      <AutoAssignRole role="candidato" redirectTo="/dashboard" firstTimeRedirectTo="/perfil?onboarding=1" />
 
       <a href="/" style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "28px", textDecoration: "none" }}>
         <div style={{ width: "38px", height: "38px", background: "linear-gradient(135deg, #1a56db, #3b82f6)", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center" }}>

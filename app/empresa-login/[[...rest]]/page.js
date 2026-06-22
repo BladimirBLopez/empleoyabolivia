@@ -1,9 +1,10 @@
 "use client";
-import { SignIn, SignUp } from "@clerk/nextjs";
+import { SignIn, SignUp, useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { AutoAssignRole } from "@/lib/role";
 
 export default function EmpresaLoginPage() {
+  const { isSignedIn, isLoaded } = useUser();
   const [mode, setMode] = useState("sign-in");
 
   const appearance = {
@@ -26,10 +27,21 @@ export default function EmpresaLoginPage() {
     },
   };
 
+  // Mismo patrón que candidato-login: si ya hay sesión activa, mostramos
+  // solo un spinner mientras AutoAssignRole redirige, en vez del formulario
+  // completo parpadeando un instante.
+  if (isLoaded && isSignedIn) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <AutoAssignRole role="empresa" redirectTo="/empresa" firstTimeRedirectTo="/empresa" />
+        <div style={{ width: "36px", height: "36px", border: "3px solid rgba(255,255,255,0.2)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "#0f172a", display: "flex", fontFamily: "'Inter', sans-serif" }}>
-      <AutoAssignRole role="empresa" redirectTo="/empresa" firstTimeRedirectTo="/empresa" />
-
       {/* Panel izquierdo — beneficios (solo desktop) */}
       <div className="empresa-side-panel" style={{ flex: "1", background: "linear-gradient(135deg, #1a56db, #0f3d9e)", padding: "60px 48px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <a href="/" style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "48px", textDecoration: "none" }}>
