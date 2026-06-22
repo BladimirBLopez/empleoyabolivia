@@ -12,24 +12,37 @@ const ESTUDIOS = ["Sin estudios","Secundaria","Técnico","Licenciatura","Postgra
 
 const FilterIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="1.5" fill="currentColor"/><circle cx="15" cy="12" r="1.5" fill="currentColor"/><circle cx="7" cy="18" r="1.5" fill="currentColor"/></svg>;
 
-// ─── Una sección de filtro reutilizable (radio buttons) ──────────────────────
+// ─── Una sección de filtro reutilizable (radio buttons, con "Mostrar más") ───
 function FilterSection({ title, options, value, onChange }) {
+  const [expandido, setExpandido] = useState(false);
+  const LIMITE = 4;
+  const visibles = expandido ? options : options.slice(0, LIMITE);
+  const hayMas = options.length > LIMITE;
+
   return (
     <div style={{ marginBottom: "28px" }}>
       <h3 style={{ fontWeight: "600", fontSize: "14px", color: "#0f172a", marginBottom: "12px" }}>{title}</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {options.map(opt => (
+        {visibles.map(opt => (
           <label key={opt} style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
             <input type="radio" checked={value === opt} onChange={() => onChange(value === opt ? "" : opt)} style={{ accentColor: "#1a56db", width: "16px", height: "16px" }} />
             <span style={{ fontSize: "14px", color: "#374151" }}>{opt}</span>
           </label>
         ))}
       </div>
-      {value && (
-        <button onClick={() => onChange("")} style={{ fontSize: "12px", color: "#1a56db", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: "8px", fontWeight: "500" }}>
-          ✕ Limpiar
-        </button>
-      )}
+
+      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "10px" }}>
+        {hayMas && (
+          <button onClick={() => setExpandido(e => !e)} style={{ fontSize: "12px", color: "#1a56db", background: "none", border: "none", cursor: "pointer", padding: 0, fontWeight: "600" }}>
+            {expandido ? "↑ Mostrar menos" : `Mostrar más (${options.length - LIMITE})`}
+          </button>
+        )}
+        {value && (
+          <button onClick={() => onChange("")} style={{ fontSize: "12px", color: "#dc2626", background: "none", border: "none", cursor: "pointer", padding: 0, fontWeight: "500" }}>
+            ✕ Limpiar
+          </button>
+        )}
+      </div>
     </div>
   );
 }
