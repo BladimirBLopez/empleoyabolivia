@@ -22,6 +22,7 @@ export default function PublicarPage() {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [camposInvalidos, setCamposInvalidos] = useState([]);
   const [done, setDone] = useState(false);
 
   const [form, setForm] = useState({
@@ -30,7 +31,10 @@ export default function PublicarPage() {
     salario: "", descripcion: "", requisitos: "", beneficios: "", activo: true, destacado: false,
   });
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k, v) => {
+    setForm(f => ({ ...f, [k]: v }));
+    setCamposInvalidos(prev => prev.filter(c => c !== k));
+  };
 
   const handleSubmit = async () => {
     setSaving(true);
@@ -89,6 +93,8 @@ export default function PublicarPage() {
 
   const inputStyle = { width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "14px", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
   const labelStyle = { display: "block", fontWeight: "500", fontSize: "13px", color: "#374151", marginBottom: "6px" };
+  // Devuelve inputStyle con borde rojo si ese campo está marcado como inválido tras intentar avanzar
+  const fieldStyle = (key) => camposInvalidos.includes(key) ? { ...inputStyle, border: "1px solid #dc2626", background: "#fef2f2" } : inputStyle;
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Inter', sans-serif" }}>
@@ -119,26 +125,30 @@ export default function PublicarPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               <div>
                 <label style={labelStyle}>Título del puesto *</label>
-                <input style={inputStyle} value={form.titulo} onChange={e => set("titulo", e.target.value)} placeholder="Ej: Desarrollador Full Stack Senior" />
+                <input style={fieldStyle("titulo")} value={form.titulo} onChange={e => set("titulo", e.target.value)} placeholder="Ej: Desarrollador Full Stack Senior" />
+                {camposInvalidos.includes("titulo") && <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "5px" }}>Este campo es obligatorio</p>}
               </div>
               <div>
                 <label style={labelStyle}>Nombre de la empresa *</label>
-                <input style={inputStyle} value={form.empresa} onChange={e => set("empresa", e.target.value)} placeholder="Ej: Entel Bolivia" />
+                <input style={fieldStyle("empresa")} value={form.empresa} onChange={e => set("empresa", e.target.value)} placeholder="Ej: Entel Bolivia" />
+                {camposInvalidos.includes("empresa") && <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "5px" }}>Este campo es obligatorio</p>}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                 <div>
                   <label style={labelStyle}>Ciudad / Departamento *</label>
-                  <select style={inputStyle} value={form.ciudad} onChange={e => set("ciudad", e.target.value)}>
+                  <select style={fieldStyle("ciudad")} value={form.ciudad} onChange={e => set("ciudad", e.target.value)}>
                     <option value="">Seleccionar</option>
                     {DEPARTAMENTOS.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
+                  {camposInvalidos.includes("ciudad") && <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "5px" }}>Selecciona una ciudad</p>}
                 </div>
                 <div>
                   <label style={labelStyle}>Categoría *</label>
-                  <select style={inputStyle} value={form.categoria} onChange={e => set("categoria", e.target.value)}>
+                  <select style={fieldStyle("categoria")} value={form.categoria} onChange={e => set("categoria", e.target.value)}>
                     <option value="">Seleccionar</option>
                     {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
+                  {camposInvalidos.includes("categoria") && <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "5px" }}>Selecciona una categoría</p>}
                 </div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
@@ -217,18 +227,37 @@ export default function PublicarPage() {
                   </div>
                 ))}
               </div>
-              {error && <p style={{ color: "#dc2626", fontSize: "13px", marginTop: "16px" }}>{error}</p>}
+            </div>
+          )}
+
+          {error && (
+            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 14px", marginTop: "20px" }}>
+              <p style={{ color: "#dc2626", fontSize: "13px", fontWeight: "500" }}>{error}</p>
             </div>
           )}
 
           {/* NAVIGATION */}
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: "28px" }}>
-            <button onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0}
+            <button onClick={() => { setError(""); setCamposInvalidos([]); setStep(s => Math.max(0, s - 1)); }} disabled={step === 0}
               style={{ background: "white", border: "1px solid #e2e8f0", color: "#475569", borderRadius: "8px", padding: "10px 24px", fontSize: "14px", cursor: step === 0 ? "not-allowed" : "pointer", opacity: step === 0 ? 0.4 : 1 }}>
               ← Anterior
             </button>
             {step < STEPS.length - 1 ? (
-              <button onClick={() => { if (step === 0 && (!form.titulo || !form.empresa || !form.ciudad || !form.categoria)) { setError("Completa todos los campos obligatorios"); return; } setError(""); setStep(s => s + 1); }}
+              <button onClick={() => {
+                  if (step === 0) {
+                    const faltantes = [];
+                    if (!form.titulo) faltantes.push("titulo");
+                    if (!form.empresa) faltantes.push("empresa");
+                    if (!form.ciudad) faltantes.push("ciudad");
+                    if (!form.categoria) faltantes.push("categoria");
+                    if (faltantes.length > 0) {
+                      setCamposInvalidos(faltantes);
+                      setError("Completa los campos marcados en rojo para continuar");
+                      return;
+                    }
+                  }
+                  setError(""); setCamposInvalidos([]); setStep(s => s + 1);
+                }}
                 style={{ background: "#1a56db", color: "white", border: "none", borderRadius: "8px", padding: "10px 28px", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
                 Siguiente →
               </button>
