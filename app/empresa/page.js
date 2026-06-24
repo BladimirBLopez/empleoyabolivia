@@ -37,15 +37,33 @@ export default function EmpresaPage() {
     if (role === "candidato") router.push("/dashboard");
   }, [isLoaded, isSignedIn, role, router]);
 
+  const [procesandoId, setProcesandoId] = useState(null);
+
   const handleToggle = async (id, activo) => {
-    await toggleEmpleo(id, !activo);
-    fetchEmpleos();
+    setProcesandoId(id);
+    try {
+      await toggleEmpleo(id, !activo);
+      await fetchEmpleos();
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo actualizar la oferta. Intenta de nuevo.");
+    } finally {
+      setProcesandoId(null);
+    }
   };
 
   const handleEliminar = async (id) => {
     if (!confirm("¿Eliminar esta oferta? Esta acción no se puede deshacer.")) return;
-    await eliminarEmpleo(id);
-    fetchEmpleos();
+    setProcesandoId(id);
+    try {
+      await eliminarEmpleo(id);
+      await fetchEmpleos();
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo eliminar la oferta. Intenta de nuevo.");
+    } finally {
+      setProcesandoId(null);
+    }
   };
 
   const verPostulaciones = async (empleo) => {
@@ -158,10 +176,12 @@ export default function EmpresaPage() {
                     <button onClick={() => verPostulaciones(emp)} style={{ background: "#eff4ff", color: "#1a56db", border: "none", borderRadius: "7px", padding: "6px 14px", fontSize: "12px", cursor: "pointer", fontWeight: "600" }}>
                       👥 {emp.postulaciones?.[0]?.count || 0} candidatos
                     </button>
-                    <button onClick={() => handleToggle(emp.id, emp.activo)} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", color: "#475569", borderRadius: "7px", padding: "6px 12px", fontSize: "12px", cursor: "pointer" }}>
-                      {emp.activo ? "Pausar" : "Activar"}
+                    <button onClick={() => handleToggle(emp.id, emp.activo)} disabled={procesandoId === emp.id}
+                      style={{ background: "#f8fafc", border: "1px solid #e2e8f0", color: "#475569", borderRadius: "7px", padding: "6px 12px", fontSize: "12px", cursor: procesandoId === emp.id ? "wait" : "pointer", opacity: procesandoId === emp.id ? 0.5 : 1 }}>
+                      {procesandoId === emp.id ? "..." : emp.activo ? "Pausar" : "Activar"}
                     </button>
-                    <button onClick={() => handleEliminar(emp.id)} style={{ background: "#fee2e2", border: "none", color: "#dc2626", borderRadius: "7px", padding: "6px 12px", fontSize: "12px", cursor: "pointer" }}>
+                    <button onClick={() => handleEliminar(emp.id)} disabled={procesandoId === emp.id}
+                      style={{ background: "#fee2e2", border: "none", color: "#dc2626", borderRadius: "7px", padding: "6px 12px", fontSize: "12px", cursor: procesandoId === emp.id ? "wait" : "pointer", opacity: procesandoId === emp.id ? 0.5 : 1 }}>
                       Eliminar
                     </button>
                   </div>
