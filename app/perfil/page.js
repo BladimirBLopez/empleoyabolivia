@@ -18,41 +18,60 @@ const EMPTY_FORM = {
   disponibilidad: "Inmediata", categoria_interes: "",
 };
 
-// ─── SECCIÓN EDITABLE — tarjeta independiente con su propio modo edición ──────
-// Cada sección guarda solo su(s) propio(s) campo(s) al tocar Guardar, sin
-// afectar al resto del perfil. Esto es lo que imita el patrón de InfoJobs:
-// "Experiencia laboral" se edita aparte de "Datos personales".
-function SeccionEditable({ titulo, icon, vacio, resumenVista, children, editando, onEditar, onCancelar, onGuardar, guardando }) {
+// ─── SECCIÓN: tarjeta de vista + pantalla completa de edición (tipo InfoJobs) ─
+// La tarjeta solo muestra el resumen y el botón "Editar"/"+ Añadir". Al
+// activarse, en vez de expandirse inline, se monta una pantalla superpuesta
+// de pantalla completa con header fijo (X, título, Guardar) — igual al
+// patrón "Añadir experiencia" / "Añadir estudio" de InfoJobs.
+function SeccionTarjeta({ titulo, icon, vacio, resumenVista, onEditar }) {
   return (
     <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "22px", marginBottom: "16px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: editando ? "18px" : "10px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
         <h2 style={{ fontWeight: "700", fontSize: "15px", color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
           <span>{icon}</span> {titulo}
         </h2>
-        {!editando && (
-          <button onClick={onEditar} style={{ background: "none", border: "none", color: "#1a56db", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
-            {vacio ? "+ Añadir" : "Editar"}
-          </button>
-        )}
+        <button onClick={onEditar} style={{ background: "none", border: "none", color: "#1a56db", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
+          {vacio ? "+ Añadir" : "Editar"}
+        </button>
       </div>
-
-      {editando ? (
-        <div>
-          {children}
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "18px" }}>
-            <button onClick={onCancelar} disabled={guardando} style={{ background: "white", border: "1px solid #e2e8f0", color: "#475569", borderRadius: "8px", padding: "9px 18px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
-              Cancelar
-            </button>
-            <button onClick={onGuardar} disabled={guardando} style={{ background: guardando ? "#93c5fd" : "#1a56db", color: "white", border: "none", borderRadius: "8px", padding: "9px 18px", fontSize: "13px", fontWeight: "600", cursor: guardando ? "not-allowed" : "pointer" }}>
-              {guardando ? "Guardando..." : "Guardar"}
-            </button>
-          </div>
-        </div>
-      ) : vacio ? (
+      {vacio ? (
         <p style={{ color: "#94a3b8", fontSize: "13px" }}>No has añadido esta información todavía.</p>
       ) : (
         resumenVista
       )}
+    </div>
+  );
+}
+
+// Pantalla completa de edición, montada por encima de todo (igual a
+// InfoJobs: X para cerrar, título centrado, Guardar siempre visible arriba).
+function PantallaEdicion({ titulo, vacio, onCerrar, onGuardar, guardando, error, children }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "white", zIndex: 300, overflowY: "auto", fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ position: "sticky", top: 0, background: "white", borderBottom: "1px solid #e2e8f0", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 1 }}>
+        <button onClick={onCerrar} disabled={guardando} style={{ background: "none", border: "none", fontSize: "22px", color: "#1a56db", cursor: "pointer", lineHeight: 1, padding: "4px" }}>
+          ✕
+        </button>
+        <h1 style={{ fontWeight: "700", fontSize: "16px", color: "#0f172a" }}>
+          {vacio ? "Añadir" : "Editar"} {titulo.toLowerCase()}
+        </h1>
+        <button onClick={onGuardar} disabled={guardando}
+          style={{ background: guardando ? "#93c5fd" : "#1a56db", color: "white", border: "none", borderRadius: "8px", padding: "9px 18px", fontSize: "13px", fontWeight: "600", cursor: guardando ? "not-allowed" : "pointer" }}>
+          {guardando ? "Guardando..." : "Guardar"}
+        </button>
+      </div>
+
+      <div style={{ maxWidth: "560px", margin: "0 auto", padding: "28px 20px 60px" }}>
+        <h2 style={{ fontWeight: "700", fontSize: "20px", color: "#0f172a", marginBottom: "24px" }}>
+          Datos de {titulo.toLowerCase()}
+        </h2>
+        {children}
+        {error && (
+          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 14px", marginTop: "20px" }}>
+            <p style={{ color: "#dc2626", fontSize: "13px" }}>{error}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -351,14 +370,10 @@ function PerfilContent() {
         </div>
 
         {/* SECCIÓN: Datos personales */}
-        <SeccionEditable
+        <SeccionTarjeta
           titulo="Datos personales" icon="👤"
           vacio={!form.ciudad && !form.telefono && !form.linkedin}
-          editando={seccionActiva === "personales"}
-          guardando={guardando}
           onEditar={() => editar("personales")}
-          onCancelar={cancelar}
-          onGuardar={() => guardarSeccion(["nombre", "titulo", "ciudad", "telefono", "linkedin", "disponibilidad", "categoria_interes"])}
           resumenVista={
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <p style={{ fontSize: "13px", color: "#374151" }}><strong>Ciudad:</strong> {form.ciudad || "—"}</p>
@@ -367,7 +382,53 @@ function PerfilContent() {
               <p style={{ fontSize: "13px", color: "#374151" }}><strong>Área de interés:</strong> {form.categoria_interes || "—"}</p>
             </div>
           }
-        >
+        />
+
+        {/* SECCIÓN: Resumen profesional */}
+        <SeccionTarjeta
+          titulo="Resumen profesional" icon="📝"
+          vacio={!form.resumen}
+          onEditar={() => editar("resumen")}
+          resumenVista={<p style={{ fontSize: "13px", color: "#374151", lineHeight: "1.6", whiteSpace: "pre-line" }}>{form.resumen}</p>}
+        />
+
+        {/* SECCIÓN: Experiencia laboral */}
+        <SeccionTarjeta
+          titulo="Experiencia laboral" icon="💼"
+          vacio={!form.experiencia}
+          onEditar={() => editar("experiencia")}
+          resumenVista={<p style={{ fontSize: "13px", color: "#374151", lineHeight: "1.6", whiteSpace: "pre-line" }}>{form.experiencia}</p>}
+        />
+
+        {/* SECCIÓN: Educación */}
+        <SeccionTarjeta
+          titulo="Educación" icon="🎓"
+          vacio={!form.educacion}
+          onEditar={() => editar("educacion")}
+          resumenVista={<p style={{ fontSize: "13px", color: "#374151", lineHeight: "1.6", whiteSpace: "pre-line" }}>{form.educacion}</p>}
+        />
+
+        {/* SECCIÓN: Habilidades */}
+        <SeccionTarjeta
+          titulo="Habilidades" icon="⚡"
+          vacio={habilidadesLista.length === 0}
+          onEditar={() => editar("habilidades")}
+          resumenVista={
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              {habilidadesLista.map(h => (
+                <span key={h} style={{ background: "#eff4ff", color: "#1a56db", fontSize: "12px", padding: "4px 12px", borderRadius: "20px", fontWeight: "500" }}>{h}</span>
+              ))}
+            </div>
+          }
+        />
+      </div>
+      <Footer />
+      <style>{`@media(max-width:600px){.perfil-grid{grid-template-columns:1fr!important}}`}</style>
+
+      {/* ── PANTALLAS DE EDICIÓN (overlays de pantalla completa, tipo InfoJobs) ── */}
+      {seccionActiva === "personales" && (
+        <PantallaEdicion titulo="Datos personales" vacio={!form.ciudad && !form.telefono && !form.linkedin} onCerrar={cancelar} guardando={guardando} error={error}
+          onGuardar={() => guardarSeccion(["nombre", "titulo", "ciudad", "telefono", "linkedin", "disponibilidad", "categoria_interes"])}>
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div>
               <label style={labelStyle}>Nombre completo *</label>
@@ -410,81 +471,39 @@ function PerfilContent() {
               </div>
             </div>
           </div>
-        </SeccionEditable>
+        </PantallaEdicion>
+      )}
 
-        {/* SECCIÓN: Resumen profesional */}
-        <SeccionEditable
-          titulo="Resumen profesional" icon="📝"
-          vacio={!form.resumen}
-          editando={seccionActiva === "resumen"}
-          guardando={guardando}
-          onEditar={() => editar("resumen")}
-          onCancelar={cancelar}
-          onGuardar={() => guardarSeccion(["resumen"])}
-          resumenVista={<p style={{ fontSize: "13px", color: "#374151", lineHeight: "1.6", whiteSpace: "pre-line" }}>{form.resumen}</p>}
-        >
-          <textarea style={{ ...inputStyle, minHeight: "160px", resize: "vertical" }} value={draft.resumen} onChange={e => setDraftField("resumen", e.target.value)} placeholder="Profesional con X años de experiencia en... Apasionado por..." />
-        </SeccionEditable>
+      {seccionActiva === "resumen" && (
+        <PantallaEdicion titulo="Resumen profesional" vacio={!form.resumen} onCerrar={cancelar} guardando={guardando} error={error}
+          onGuardar={() => guardarSeccion(["resumen"])}>
+          <textarea style={{ ...inputStyle, minHeight: "200px", resize: "vertical" }} value={draft.resumen} onChange={e => setDraftField("resumen", e.target.value)} placeholder="Profesional con X años de experiencia en... Apasionado por..." />
+        </PantallaEdicion>
+      )}
 
-        {/* SECCIÓN: Experiencia laboral */}
-        <SeccionEditable
-          titulo="Experiencia laboral" icon="💼"
-          vacio={!form.experiencia}
-          editando={seccionActiva === "experiencia"}
-          guardando={guardando}
-          onEditar={() => editar("experiencia")}
-          onCancelar={cancelar}
-          onGuardar={() => guardarSeccion(["experiencia"])}
-          resumenVista={<p style={{ fontSize: "13px", color: "#374151", lineHeight: "1.6", whiteSpace: "pre-line" }}>{form.experiencia}</p>}
-        >
-          <textarea style={{ ...inputStyle, minHeight: "140px", resize: "vertical" }} value={draft.experiencia} onChange={e => setDraftField("experiencia", e.target.value)}
+      {seccionActiva === "experiencia" && (
+        <PantallaEdicion titulo="Experiencia laboral" vacio={!form.experiencia} onCerrar={cancelar} guardando={guardando} error={error}
+          onGuardar={() => guardarSeccion(["experiencia"])}>
+          <textarea style={{ ...inputStyle, minHeight: "200px", resize: "vertical" }} value={draft.experiencia} onChange={e => setDraftField("experiencia", e.target.value)}
             placeholder={"2022 - Actual | Desarrollador Senior | Empresa XYZ\n- Responsabilidad 1\n- Responsabilidad 2"} />
-        </SeccionEditable>
+        </PantallaEdicion>
+      )}
 
-        {/* SECCIÓN: Educación */}
-        <SeccionEditable
-          titulo="Educación" icon="🎓"
-          vacio={!form.educacion}
-          editando={seccionActiva === "educacion"}
-          guardando={guardando}
-          onEditar={() => editar("educacion")}
-          onCancelar={cancelar}
-          onGuardar={() => guardarSeccion(["educacion"])}
-          resumenVista={<p style={{ fontSize: "13px", color: "#374151", lineHeight: "1.6", whiteSpace: "pre-line" }}>{form.educacion}</p>}
-        >
-          <textarea style={{ ...inputStyle, minHeight: "110px", resize: "vertical" }} value={draft.educacion} onChange={e => setDraftField("educacion", e.target.value)}
+      {seccionActiva === "educacion" && (
+        <PantallaEdicion titulo="Educación" vacio={!form.educacion} onCerrar={cancelar} guardando={guardando} error={error}
+          onGuardar={() => guardarSeccion(["educacion"])}>
+          <textarea style={{ ...inputStyle, minHeight: "160px", resize: "vertical" }} value={draft.educacion} onChange={e => setDraftField("educacion", e.target.value)}
             placeholder={"2018 - 2022 | Licenciatura en Ingeniería de Sistemas | UMSA"} />
-        </SeccionEditable>
+        </PantallaEdicion>
+      )}
 
-        {/* SECCIÓN: Habilidades */}
-        <SeccionEditable
-          titulo="Habilidades" icon="⚡"
-          vacio={habilidadesLista.length === 0}
-          editando={seccionActiva === "habilidades"}
-          guardando={guardando}
-          onEditar={() => editar("habilidades")}
-          onCancelar={cancelar}
-          onGuardar={() => guardarSeccion(["habilidades"])}
-          resumenVista={
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              {habilidadesLista.map(h => (
-                <span key={h} style={{ background: "#eff4ff", color: "#1a56db", fontSize: "12px", padding: "4px 12px", borderRadius: "20px", fontWeight: "500" }}>{h}</span>
-              ))}
-            </div>
-          }
-        >
+      {seccionActiva === "habilidades" && (
+        <PantallaEdicion titulo="Habilidades" vacio={habilidadesLista.length === 0} onCerrar={cancelar} guardando={guardando} error={error}
+          onGuardar={() => guardarSeccion(["habilidades"])}>
           <label style={labelStyle}>Habilidades técnicas y blandas (separadas por coma)</label>
           <input style={inputStyle} value={draft.habilidades} onChange={e => setDraftField("habilidades", e.target.value)} placeholder="JavaScript, React, Node.js, Trabajo en equipo, Liderazgo" />
-        </SeccionEditable>
-
-        {error && (
-          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 14px", marginTop: "8px" }}>
-            <p style={{ color: "#dc2626", fontSize: "13px" }}>{error}</p>
-          </div>
-        )}
-      </div>
-      <Footer />
-      <style>{`@media(max-width:600px){.perfil-grid{grid-template-columns:1fr!important}}`}</style>
+        </PantallaEdicion>
+      )}
     </div>
   );
 }
