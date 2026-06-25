@@ -163,8 +163,19 @@ function PerfilContent() {
   useEffect(() => { cargarExperiencias(); }, [isSignedIn, user?.id]);
 
   const abrirNuevaExperiencia = () => { setExpDraft(EXPERIENCIA_VACIA); setEditandoExpId("nueva"); setSeccionActiva("experiencia"); setError(""); };
-  const abrirEditarExperiencia = (exp) => { setExpDraft(exp); setEditandoExpId(exp.id); setSeccionActiva("experiencia"); setError(""); };
+  const fechaAMes = (fechaStr) => fechaStr ? fechaStr.slice(0, 7) : "";
+  const abrirEditarExperiencia = (exp) => {
+    setExpDraft({ ...exp, fecha_inicio: fechaAMes(exp.fecha_inicio), fecha_fin: fechaAMes(exp.fecha_fin) });
+    setEditandoExpId(exp.id);
+    setSeccionActiva("experiencia");
+    setError("");
+  };
   const setExpField = (k, v) => setExpDraft(d => ({ ...d, [k]: v }));
+
+  // Convierte "2022-04" (formato de <input type="month">) a "2022-04-01"
+  // (formato que la columna `date` de Postgres necesita). Sin esto, Supabase
+  // rechaza la fecha y el insert/update falla silenciosamente para el usuario.
+  const mesAFecha = (valorMes) => valorMes ? `${valorMes}-01` : null;
 
   const guardarExperiencia = async () => {
     if (!expDraft.empresa || !expDraft.puesto) {
@@ -174,11 +185,12 @@ function PerfilContent() {
     setGuardando(true);
     setError("");
     try {
+      const { id, created_at, updated_at, ...campos } = expDraft; // nunca reenviamos id/timestamps
       const payload = {
-        ...expDraft,
+        ...campos,
         clerk_user_id: user.id,
-        fecha_fin: expDraft.trabajo_actualmente ? null : (expDraft.fecha_fin || null),
-        fecha_inicio: expDraft.fecha_inicio || null,
+        fecha_inicio: mesAFecha(expDraft.fecha_inicio),
+        fecha_fin: expDraft.trabajo_actualmente ? null : mesAFecha(expDraft.fecha_fin),
         salario_minimo: expDraft.salario_minimo ? Number(expDraft.salario_minimo) : null,
         salario_maximo: expDraft.salario_maximo ? Number(expDraft.salario_maximo) : null,
       };
