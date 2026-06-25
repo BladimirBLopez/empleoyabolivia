@@ -3,11 +3,40 @@ import { useState, useEffect, Suspense } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar, Footer, Spinner, ErrorMessage } from "@/lib/components";
-import { getPerfil, upsertPerfil } from "@/lib/supabase";
+import { getPerfil, upsertPerfil, getExperiencias, crearExperiencia, actualizarExperiencia, eliminarExperiencia } from "@/lib/supabase";
 
 const CATEGORIAS = ["Tecnología","Ventas","Administración","Marketing","Salud","Educación","Ingeniería","Finanzas","Minería","Telecomunicaciones","Energía","Logística"];
 const DEPARTAMENTOS = ["La Paz","Santa Cruz","Cochabamba","Oruro","Potosí","Sucre","Tarija","Trinidad","Cobija"];
 const STEPS = ["Datos personales", "Resumen profesional", "Experiencia y educación", "Habilidades"];
+const TIPOS_SALARIO = ["Bruto/año", "Bruto/mes", "Neto/mes"];
+
+const EXPERIENCIA_VACIA = {
+  empresa: "", sector: "", puesto: "", trabajo_actualmente: false,
+  fecha_inicio: "", fecha_fin: "", categoria: "", conocimientos: "",
+  descripcion: "", salario_minimo: "", salario_maximo: "", salario_tipo: "Bruto/año",
+  ocultar_salario: false, ocultar_experiencia: false,
+};
+
+// Formatea "2022-04-01" → "Abril de 2022" y calcula duración tipo InfoJobs
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+function formatFecha(fechaStr) {
+  if (!fechaStr) return "";
+  const [y, m] = fechaStr.split("-");
+  return `${MESES[parseInt(m, 10) - 1]} de ${y}`;
+}
+function calcularDuracion(inicio, fin) {
+  if (!inicio) return "";
+  const fechaInicio = new Date(inicio);
+  const fechaFin = fin ? new Date(fin) : new Date();
+  let meses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + (fechaFin.getMonth() - fechaInicio.getMonth());
+  if (meses < 0) meses = 0;
+  const años = Math.floor(meses / 12);
+  const mesesRestantes = meses % 12;
+  const partes = [];
+  if (años > 0) partes.push(`${años} año${años === 1 ? "" : "s"}`);
+  if (mesesRestantes > 0 || partes.length === 0) partes.push(`${mesesRestantes} mes${mesesRestantes === 1 ? "" : "es"}`);
+  return partes.join(" y ");
+}
 
 const inputStyle = { width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "14px", outline: "none", fontFamily: "inherit", boxSizing: "border-box", transition: "border-color 0.15s" };
 const labelStyle = { display: "block", fontWeight: "500", fontSize: "13px", color: "#374151", marginBottom: "6px" };
@@ -76,6 +105,32 @@ function PantallaEdicion({ titulo, vacio, onCerrar, onGuardar, guardando, error,
   );
 }
 
+// Tarjeta individual de una experiencia ya guardada (estilo InfoJobs: logo
+// genérico, empresa, puesto, fechas + duración calculada, descripción).
+function TarjetaExperiencia({ exp, onEditar, onEliminar }) {
+  return (
+    <div style={{ border: "1px solid #f1f5f9", borderRadius: "10px", padding: "16px", marginBottom: "10px" }}>
+      <div style={{ display: "flex", gap: "12px" }}>
+        <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "18px" }}>🏢</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontWeight: "700", fontSize: "14px", color: "#0f172a" }}>{exp.puesto}</p>
+          <p style={{ fontSize: "13px", color: "#64748b" }}>{exp.empresa}{exp.sector ? ` · ${exp.sector}` : ""}</p>
+          <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>
+            {formatFecha(exp.fecha_inicio)} - {exp.trabajo_actualmente ? "Actualmente" : formatFecha(exp.fecha_fin)}
+            {" "}({calcularDuracion(exp.fecha_inicio, exp.trabajo_actualmente ? null : exp.fecha_fin)})
+          </p>
+          {exp.descripcion && <p style={{ fontSize: "13px", color: "#374151", marginTop: "8px", whiteSpace: "pre-line" }}>{exp.descripcion}</p>}
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: "14px", marginTop: "10px", paddingLeft: "52px" }}>
+        <button onClick={onEditar} style={{ background: "none", border: "none", color: "#1a56db", fontSize: "12px", fontWeight: "600", cursor: "pointer", padding: 0 }}>Editar</button>
+        <button onClick={onEliminar} style={{ background: "none", border: "none", color: "#dc2626", fontSize: "12px", fontWeight: "600", cursor: "pointer", padding: 0 }}>Eliminar</button>
+      </div>
+    </div>
+  );
+}
+
+
 function PerfilContent() {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
@@ -92,6 +147,65 @@ function PerfilContent() {
   const [seccionActiva, setSeccionActiva] = useState(null); // 'personales' | 'resumen' | 'experiencia' | 'habilidades' | null
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
+
+  // ── Experiencias (lista de entradas, estilo InfoJobs) ────────────────────
+  const [experiencias, setExperiencias] = useState([]);
+  const [loadingExp, setLoadingExp] = useState(true);
+  const [editandoExpId, setEditandoExpId] = useState(null); // null = nueva, id = editando esa
+  const [expDraft, setExpDraft] = useState(EXPERIENCIA_VACIA);
+
+  const cargarExperiencias = () => {
+    if (!isSignedIn) return;
+    setLoadingExp(true);
+    getExperiencias(user.id).then(setExperiencias).catch(console.error).finally(() => setLoadingExp(false));
+  };
+
+  useEffect(() => { cargarExperiencias(); }, [isSignedIn, user?.id]);
+
+  const abrirNuevaExperiencia = () => { setExpDraft(EXPERIENCIA_VACIA); setEditandoExpId("nueva"); setSeccionActiva("experiencia"); setError(""); };
+  const abrirEditarExperiencia = (exp) => { setExpDraft(exp); setEditandoExpId(exp.id); setSeccionActiva("experiencia"); setError(""); };
+  const setExpField = (k, v) => setExpDraft(d => ({ ...d, [k]: v }));
+
+  const guardarExperiencia = async () => {
+    if (!expDraft.empresa || !expDraft.puesto) {
+      setError("Completa al menos el nombre de la empresa y el puesto.");
+      return;
+    }
+    setGuardando(true);
+    setError("");
+    try {
+      const payload = {
+        ...expDraft,
+        clerk_user_id: user.id,
+        fecha_fin: expDraft.trabajo_actualmente ? null : (expDraft.fecha_fin || null),
+        fecha_inicio: expDraft.fecha_inicio || null,
+        salario_minimo: expDraft.salario_minimo ? Number(expDraft.salario_minimo) : null,
+        salario_maximo: expDraft.salario_maximo ? Number(expDraft.salario_maximo) : null,
+      };
+      if (editandoExpId === "nueva") {
+        await crearExperiencia(payload);
+      } else {
+        await actualizarExperiencia(editandoExpId, payload);
+      }
+      await cargarExperiencias();
+      setSeccionActiva(null);
+      setEditandoExpId(null);
+    } catch (e) {
+      setError("Error al guardar: " + e.message);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const handleEliminarExperiencia = async (id) => {
+    if (!confirm("¿Eliminar esta experiencia? Esta acción no se puede deshacer.")) return;
+    try {
+      await eliminarExperiencia(id);
+      await cargarExperiencias();
+    } catch (e) {
+      alert("No se pudo eliminar. Intenta de nuevo.");
+    }
+  };
 
   // ── Onboarding (wizard de 4 pasos, solo la primera vez) ──────────────────
   const [step, setStep] = useState(0);
@@ -392,13 +506,26 @@ function PerfilContent() {
           resumenVista={<p style={{ fontSize: "13px", color: "#374151", lineHeight: "1.6", whiteSpace: "pre-line" }}>{form.resumen}</p>}
         />
 
-        {/* SECCIÓN: Experiencia laboral */}
-        <SeccionTarjeta
-          titulo="Experiencia laboral" icon="💼"
-          vacio={!form.experiencia}
-          onEditar={() => editar("experiencia")}
-          resumenVista={<p style={{ fontSize: "13px", color: "#374151", lineHeight: "1.6", whiteSpace: "pre-line" }}>{form.experiencia}</p>}
-        />
+        {/* SECCIÓN: Experiencia laboral (lista de entradas, estilo InfoJobs) */}
+        <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "22px", marginBottom: "16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
+            <h2 style={{ fontWeight: "700", fontSize: "15px", color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span>💼</span> Experiencia laboral
+            </h2>
+            <button onClick={abrirNuevaExperiencia} style={{ background: "none", border: "none", color: "#1a56db", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
+              + Añadir
+            </button>
+          </div>
+          {loadingExp ? (
+            <Spinner />
+          ) : experiencias.length === 0 ? (
+            <p style={{ color: "#94a3b8", fontSize: "13px" }}>No has añadido experiencia laboral todavía.</p>
+          ) : (
+            experiencias.map(exp => (
+              <TarjetaExperiencia key={exp.id} exp={exp} onEditar={() => abrirEditarExperiencia(exp)} onEliminar={() => handleEliminarExperiencia(exp.id)} />
+            ))
+          )}
+        </div>
 
         {/* SECCIÓN: Educación */}
         <SeccionTarjeta
@@ -482,10 +609,83 @@ function PerfilContent() {
       )}
 
       {seccionActiva === "experiencia" && (
-        <PantallaEdicion titulo="Experiencia laboral" vacio={!form.experiencia} onCerrar={cancelar} guardando={guardando} error={error}
-          onGuardar={() => guardarSeccion(["experiencia"])}>
-          <textarea style={{ ...inputStyle, minHeight: "200px", resize: "vertical" }} value={draft.experiencia} onChange={e => setDraftField("experiencia", e.target.value)}
-            placeholder={"2022 - Actual | Desarrollador Senior | Empresa XYZ\n- Responsabilidad 1\n- Responsabilidad 2"} />
+        <PantallaEdicion titulo="Experiencia laboral" vacio={editandoExpId === "nueva"} onCerrar={() => { setSeccionActiva(null); setEditandoExpId(null); setError(""); }} guardando={guardando} error={error}
+          onGuardar={guardarExperiencia}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div>
+              <label style={labelStyle}>Nombre de la empresa *</label>
+              <input style={inputStyle} value={expDraft.empresa} onChange={e => setExpField("empresa", e.target.value)} placeholder="Ej: Entel Bolivia" />
+            </div>
+            <div>
+              <label style={labelStyle}>Sector de la empresa (opcional)</label>
+              <select style={inputStyle} value={expDraft.sector} onChange={e => setExpField("sector", e.target.value)}>
+                <option value="">Seleccionar</option>
+                {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Nombre del puesto *</label>
+              <input style={inputStyle} value={expDraft.puesto} onChange={e => setExpField("puesto", e.target.value)} placeholder="Ej: Desarrollador Full Stack" />
+            </div>
+
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+              <input type="checkbox" checked={expDraft.trabajo_actualmente} onChange={e => setExpField("trabajo_actualmente", e.target.checked)} style={{ width: "16px", height: "16px", accentColor: "#1a56db" }} />
+              <span style={{ fontSize: "13px", color: "#374151" }}>Trabajo aquí actualmente</span>
+            </label>
+
+            <div className="perfil-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div>
+                <label style={labelStyle}>Fecha de inicio</label>
+                <input type="month" style={inputStyle} value={expDraft.fecha_inicio} onChange={e => setExpField("fecha_inicio", e.target.value)} />
+              </div>
+              <div>
+                <label style={labelStyle}>Fecha de fin</label>
+                <input type="month" style={inputStyle} value={expDraft.fecha_fin} onChange={e => setExpField("fecha_fin", e.target.value)} disabled={expDraft.trabajo_actualmente}
+                  placeholder={expDraft.trabajo_actualmente ? "Actualmente" : ""} />
+              </div>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Categoría (opcional)</label>
+              <select style={inputStyle} value={expDraft.categoria} onChange={e => setExpField("categoria", e.target.value)}>
+                <option value="">Seleccionar</option>
+                {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Conocimientos y tecnologías utilizados (opcional)</label>
+              <input style={inputStyle} value={expDraft.conocimientos} onChange={e => setExpField("conocimientos", e.target.value)} placeholder="Ej: Excel, Java, atención al cliente" />
+            </div>
+
+            <div>
+              <label style={labelStyle}>Descripción del puesto (opcional)</label>
+              <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "-2px", marginBottom: "6px" }}>Indica tus funciones, logros y habilidades. Las empresas usan esta información para evaluar tu perfil.</p>
+              <textarea style={{ ...inputStyle, minHeight: "120px", resize: "vertical" }} value={expDraft.descripcion} onChange={e => setExpField("descripcion", e.target.value)} maxLength={4000} />
+              <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px" }}>{(expDraft.descripcion || "").length}/4000</p>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Salario que percibiste (opcional)</label>
+              <div className="perfil-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+                <select style={inputStyle} value={expDraft.salario_tipo} onChange={e => setExpField("salario_tipo", e.target.value)}>
+                  {TIPOS_SALARIO.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <input style={inputStyle} type="number" value={expDraft.salario_minimo} onChange={e => setExpField("salario_minimo", e.target.value)} placeholder="Mínimo" />
+                <input style={inputStyle} type="number" value={expDraft.salario_maximo} onChange={e => setExpField("salario_maximo", e.target.value)} placeholder="Máximo" />
+              </div>
+            </div>
+
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+              <input type="checkbox" checked={expDraft.ocultar_salario} onChange={e => setExpField("ocultar_salario", e.target.checked)} style={{ width: "16px", height: "16px", accentColor: "#1a56db" }} />
+              <span style={{ fontSize: "13px", color: "#374151" }}>No quiero mostrar este salario a las empresas</span>
+            </label>
+
+            <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", cursor: "pointer" }}>
+              <input type="checkbox" checked={expDraft.ocultar_experiencia} onChange={e => setExpField("ocultar_experiencia", e.target.checked)} style={{ width: "16px", height: "16px", accentColor: "#1a56db", marginTop: "2px" }} />
+              <span style={{ fontSize: "13px", color: "#374151" }}>No quiero que las empresas vean esta experiencia <span style={{ color: "#94a3b8" }}>(podrás hacerla visible en cualquier momento)</span></span>
+            </label>
+          </div>
         </PantallaEdicion>
       )}
 
